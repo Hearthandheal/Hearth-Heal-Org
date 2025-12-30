@@ -117,13 +117,33 @@
                         <p class="payment-note">Secure payment via PayPal</p>
                     </div>
 
-                    <!-- Stripe -->
+                    <!-- Bank Transfer (Kenya) -->
                     <div class="payment-option">
-                        <button class="payment-btn stripe-btn" onclick="donateWithStripe()">
-                            <i data-feather="credit-card"></i>
-                            <span>Donate with Card (Stripe)</span>
+                        <button class="payment-btn bank-btn" onclick="toggleBankTransfer()">
+                            <i data-feather="dollar-sign"></i>
+                            <span>Bank Transfer (Kenya)</span>
                         </button>
-                        <p class="payment-note">Credit/Debit card via Stripe</p>
+                        <div id="bankDetails" class="bank-details" style="display: none;">
+                            <div class="bank-option">
+                                <h4>Equity Bank</h4>
+                                <p><strong>Account Name:</strong> Hearth and Heal</p>
+                                <p><strong>Account Number:</strong> <span class="copy-text">0123456789</span></p>
+                                <p><strong>Branch:</strong> Nairobi</p>
+                            </div>
+                            <div class="bank-option">
+                                <h4>KCB Bank</h4>
+                                <p><strong>Account Name:</strong> Hearth and Heal</p>
+                                <p><strong>Account Number:</strong> <span class="copy-text">1234567890</span></p>
+                                <p><strong>Branch:</strong> Westlands</p>
+                            </div>
+                            <div class="bank-option">
+                                <h4>Co-operative Bank</h4>
+                                <p><strong>Account Name:</strong> Hearth and Heal</p>
+                                <p><strong>Account Number:</strong> <span class="copy-text">0987654321</span></p>
+                                <p><strong>Branch:</strong> CBD</p>
+                            </div>
+                            <p class="payment-note">Transfer your donation amount to any of the above accounts</p>
+                        </div>
                     </div>
 
                     <!-- M-Pesa -->
@@ -280,18 +300,10 @@
             // window.location.href = `https://www.paypal.com/donate?hosted_button_id=YOUR_BUTTON_ID&amount=${selectedAmount}`;
         }
 
-        // Stripe donation
-        function donateWithStripe() {
-            if (selectedAmount === 0) {
-                alert('Please select or enter a donation amount');
-                return;
-            }
-
-            // TODO: Replace with your actual Stripe payment link
-            alert(`Demo: Would redirect to Stripe for $${selectedAmount} donation.\n\nTo enable real donations:\n1. Create payment link at stripe.com\n2. Replace the alert with actual Stripe redirect`);
-
-            // Real implementation would be:
-            // window.location.href = `https://buy.stripe.com/YOUR_PAYMENT_LINK?amount=${selectedAmount}`;
+        // Bank Transfer toggle
+        function toggleBankTransfer() {
+            const details = document.getElementById('bankDetails');
+            details.style.display = details.style.display === 'none' ? 'block' : 'none';
         }
 
         // M-Pesa toggle
