@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donate - Hearth and Heal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Outfit:wght@500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/feather-icons"></script>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">Hearth & Heal</a>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="mission.html" class="nav-link">Our Mission</a></li>
+                    <li><a href="services.html" class="nav-link">Our Services</a></li>
+                    <li><a href="shop.html" class="nav-link">Shop</a></li>
+                    <li><a href="contact.html" class="nav-link">Get Involved</a></li>
+                    <li><a href="login.html" class="nav-link" id="auth-link">Login</a></li>
+                    <li><a href="donate.html" class="btn btn-primary">Donate</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="donate-hero">
+        <div class="container">
+            <div class="donate-hero-content">
+                <h1 class="gradient-text">Your Gift Changes Lives</h1>
+                <p class="hero-subtitle">Every donation helps us provide a safe, inclusive, and restorative environment
+                    for those navigating personal adversity.</p>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <i data-feather="heart"></i>
+                        <div>
+                            <h3>500+</h3>
+                            <p>Lives Touched</p>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i data-feather="users"></i>
+                        <div>
+                            <h3>50+</h3>
+                            <p>Support Groups</p>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i data-feather="book"></i>
+                        <div>
+                            <h3>1000+</h3>
+                            <p>Resources Shared</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Donation Form Section -->
+    <section class="donation-section">
+        <div class="container">
+            <div class="donation-card">
+                <h2>Choose Your Donation Amount</h2>
+                <p class="section-subtitle">Select a preset amount or enter your own</p>
+
+                <!-- Amount Selection -->
+                <div class="amount-grid">
+                    <button class="amount-btn" data-amount="10">$10</button>
+                    <button class="amount-btn" data-amount="25">$25</button>
+                    <button class="amount-btn" data-amount="50">$50</button>
+                    <button class="amount-btn" data-amount="100">$100</button>
+                    <button class="amount-btn" data-amount="250">$250</button>
+                    <button class="amount-btn" data-amount="500">$500</button>
+                </div>
+
+                <!-- Custom Amount -->
+                <div class="custom-amount">
+                    <label for="customAmount">Or enter custom amount:</label>
+                    <div class="input-group">
+                        <span class="currency">$</span>
+                        <input type="number" id="customAmount" placeholder="Enter amount" min="1">
+                    </div>
+                </div>
+
+                <!-- Donation Type -->
+                <div class="donation-type">
+                    <label>
+                        <input type="radio" name="donationType" value="one-time" checked>
+                        <span>One-time donation</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="donationType" value="monthly">
+                        <span>Monthly donation</span>
+                    </label>
+                </div>
+
+                <!-- Payment Methods -->
+                <div class="payment-methods">
+                    <h3>Choose Payment Method</h3>
+
+                    <!-- PayPal -->
+                    <div class="payment-option">
+                        <button class="payment-btn paypal-btn" onclick="donateWithPayPal()">
+                            <i data-feather="credit-card"></i>
+                            <span>Donate with PayPal</span>
+                        </button>
+                        <p class="payment-note">Secure payment via PayPal</p>
+                    </div>
+
+                    <!-- Stripe -->
+                    <div class="payment-option">
+                        <button class="payment-btn stripe-btn" onclick="donateWithStripe()">
+                            <i data-feather="credit-card"></i>
+                            <span>Donate with Card (Stripe)</span>
+                        </button>
+                        <p class="payment-note">Credit/Debit card via Stripe</p>
+                    </div>
+
+                    <!-- M-Pesa -->
+                    <div class="payment-option mpesa-option">
+                        <button class="payment-btn mpesa-btn" onclick="toggleMpesa()">
+                            <i data-feather="smartphone"></i>
+                            <span>M-Pesa (Kenya)</span>
+                        </button>
+                        <div id="mpesaDetails" class="mpesa-details" style="display: none;">
+                            <p><strong>Paybill Number:</strong> <span class="copy-text">123456</span></p>
+                            <p><strong>Account Number:</strong> <span class="copy-text">HEARTH</span></p>
+                            <p class="payment-note">Send your donation amount to the above details</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tax Info -->
+                <div class="tax-info">
+                    <i data-feather="info"></i>
+                    <p>Hearth & Heal is a registered non-profit. Your donation may be tax-deductible. Please consult
+                        your tax advisor.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Impact Section -->
+    <section class="impact-section">
+        <div class="container">
+            <h2 class="section-title">Your Impact</h2>
+            <p class="section-subtitle">See how your donation makes a difference</p>
+
+            <div class="impact-grid">
+                <div class="impact-card">
+                    <div class="impact-icon">
+                        <i data-feather="heart"></i>
+                    </div>
+                    <h3>$10</h3>
+                    <p>Provides counseling materials for one person</p>
+                </div>
+                <div class="impact-card">
+                    <div class="impact-icon">
+                        <i data-feather="users"></i>
+                    </div>
+                    <h3>$50</h3>
+                    <p>Supports a support group session for 10 people</p>
+                </div>
+                <div class="impact-card">
+                    <div class="impact-icon">
+                        <i data-feather="book"></i>
+                    </div>
+                    <h3>$100</h3>
+                    <p>Funds a workshop on healing and recovery</p>
+                </div>
+                <div class="impact-card">
+                    <div class="impact-icon">
+                        <i data-feather="home"></i>
+                    </div>
+                    <h3>$250</h3>
+                    <p>Provides safe space rental for a month</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials-section">
+        <div class="container">
+            <h2 class="section-title">Donor Stories</h2>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"Supporting Hearth & Heal has been one of the most rewarding decisions.
+                        Knowing my contribution helps people find healing brings me joy."</p>
+                    <div class="testimonial-author">
+                        <strong>Sarah M.</strong>
+                        <span>Monthly Donor</span>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"The work they do is transformative. I've seen firsthand how they create
+                        safe spaces for those who need it most."</p>
+                    <div class="testimonial-author">
+                        <strong>David K.</strong>
+                        <span>One-time Donor</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Hearth & Heal</h3>
+                    <p>Creating safe spaces for healing and restoration.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="mission.html">Our Mission</a></li>
+                        <li><a href="services.html">Services</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <p>hello@hearthandheal.org</p>
+                    <p>(555) 123-4567</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Hearth & Heal. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="auth.js"></script>
+    <script src="chatbot.js"></script>
+    <script>
+        feather.replace();
+
+        let selectedAmount = 0;
+
+        // Amount button selection
+        document.querySelectorAll('.amount-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                selectedAmount = parseInt(this.dataset.amount);
+                document.getElementById('customAmount').value = '';
+            });
+        });
+
+        // Custom amount input
+        document.getElementById('customAmount').addEventListener('input', function () {
+            document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+            selectedAmount = parseInt(this.value) || 0;
+        });
+
+        // PayPal donation
+        function donateWithPayPal() {
+            if (selectedAmount === 0) {
+                alert('Please select or enter a donation amount');
+                return;
+            }
+
+            // TODO: Replace with your actual PayPal button ID
+            alert(`Demo: Would redirect to PayPal for $${selectedAmount} donation.\n\nTo enable real donations:\n1. Create PayPal donate button at paypal.com\n2. Replace the alert with actual PayPal form submission`);
+
+            // Real implementation would be:
+            // window.location.href = `https://www.paypal.com/donate?hosted_button_id=YOUR_BUTTON_ID&amount=${selectedAmount}`;
+        }
+
+        // Stripe donation
+        function donateWithStripe() {
+            if (selectedAmount === 0) {
+                alert('Please select or enter a donation amount');
+                return;
+            }
+
+            // TODO: Replace with your actual Stripe payment link
+            alert(`Demo: Would redirect to Stripe for $${selectedAmount} donation.\n\nTo enable real donations:\n1. Create payment link at stripe.com\n2. Replace the alert with actual Stripe redirect`);
+
+            // Real implementation would be:
+            // window.location.href = `https://buy.stripe.com/YOUR_PAYMENT_LINK?amount=${selectedAmount}`;
+        }
+
+        // M-Pesa toggle
+        function toggleMpesa() {
+            const details = document.getElementById('mpesaDetails');
+            details.style.display = details.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Copy to clipboard
+        document.querySelectorAll('.copy-text').forEach(el => {
+            el.style.cursor = 'pointer';
+            el.addEventListener('click', function () {
+                navigator.clipboard.writeText(this.textContent);
+                const original = this.textContent;
+                this.textContent = 'Copied!';
+                setTimeout(() => this.textContent = original, 2000);
+            });
+        });
+    </script>
+</body>
+
+</html>
