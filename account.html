@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hearth and Heal | Account Center</title>
+    <meta name="description" content="Manage your Hearth and Heal account settings.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Outfit:wght@500;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <!-- Auth Protection -->
+    <script src="auth.js"></script>
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <header>
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <img src="assets/logo.png" alt="Hearth & Heal Logo">
+            </a>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="mission.html" class="nav-link">Our Mission</a></li>
+                    <li><a href="services.html" class="nav-link">Our Services</a></li>
+                    <li><a href="shop.html" class="nav-link">Shop</a></li>
+                    <li><a href="contact.html" class="nav-link">Get Involved</a></li>
+                    <li><a href="login.html" class="nav-link" id="auth-link">Login</a></li>
+                    <li><a href="contact.html" class="btn btn-primary">Donate</a></li>
+                </ul>
+            </nav>
+            <div class="mobile-menu-btn">
+                <i data-feather="menu"></i>
+            </div>
+        </div>
+    </header>
+
+    <main style="padding-top: 120px; padding-bottom: 5rem;">
+        <div class="container">
+            <div class="account-layout">
+                <!-- Sidebar -->
+                <aside class="account-sidebar animate-on-scroll">
+                    <div class="user-summary">
+                        <div class="user-avatar-large">
+                            <i data-feather="user"></i>
+                        </div>
+                        <h3 id="sidebar-name">Loading...</h3>
+                        <p id="sidebar-email">...</p>
+                    </div>
+                    <nav class="account-nav">
+                        <!-- Anchor Links for Single Page Navigation -->
+                        <a href="#profile-section" class="account-nav-btn">
+                            <i data-feather="user"></i> Profile
+                        </a>
+                        <a href="#security-section" class="account-nav-btn">
+                            <i data-feather="shield"></i> Security
+                        </a>
+                        <a href="#settings-section" class="account-nav-btn">
+                            <i data-feather="settings"></i> Settings
+                        </a>
+                        <button class="account-nav-btn logout-btn" onclick="Auth.logout()">
+                            <i data-feather="log-out"></i> Logout
+                        </button>
+                    </nav>
+                </aside>
+
+                <!-- Content Area -->
+                <section class="account-content animate-on-scroll fade-up">
+
+                    <!-- Profile Section -->
+                    <div id="profile-section" class="account-section">
+                        <h2 class="section-title">My Profile</h2>
+                        <form id="profile-form" onsubmit="handleProfileUpdate(event)">
+                            <div class="form-group">
+                                <label for="profile-email">Email Address</label>
+                                <input type="email" id="profile-email" disabled
+                                    style="opacity: 0.7; cursor: not-allowed;">
+                                <small style="color: var(--color-text-light);">Email cannot be changed.</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="profile-name">Full Name</label>
+                                <input type="text" id="profile-name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="profile-bio">Bio</label>
+                                <textarea id="profile-bio" rows="4"
+                                    placeholder="Tell us a bit about yourself..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </form>
+                    </div>
+
+                    <hr class="divider">
+
+                    <!-- Security Section -->
+                    <div id="security-section" class="account-section">
+                        <h2 class="section-title">Security</h2>
+                        <form id="security-form" onsubmit="handleChangePassword(event)">
+                            <div class="form-group">
+                                <label for="current-password">Current Password</label>
+                                <input type="password" id="current-password" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="new-password">New Password</label>
+                                <input type="password" id="new-password" required minlength="6">
+                            </div>
+                            <div class="form-group">
+                                <label for="confirm-new-password">Confirm New Password</label>
+                                <input type="password" id="confirm-new-password" required minlength="6">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Update Password</button>
+                        </form>
+                    </div>
+
+                    <hr class="divider">
+
+                    <!-- Settings Section -->
+                    <div id="settings-section" class="account-section">
+                        <h2 class="section-title">Settings</h2>
+                        <div class="settings-group">
+                            <div class="setting-item">
+                                <div>
+                                    <h4>Email Notifications</h4>
+                                    <p>Receive updates about our mission and events.</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <div>
+                                    <h4>Dark Mode</h4>
+                                    <p>Toggle dark mode appearance.</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" checked disabled>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p class="copyright">&copy; 2024 Hearth and Heal Organization. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Styles for Single Page Layout -->
+    <style>
+        .account-section {
+            padding: 1rem 0 2rem 0;
+            scroll-margin-top: 140px;
+            /* Offset for fixed header */
+        }
+
+        .section-title {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .divider {
+            border: 0;
+            border-top: 1px solid #f0f0f0;
+            margin: 2rem 0;
+        }
+
+        .account-nav-btn {
+            text-decoration: none;
+            /* For anchor tags */
+            display: flex;
+            /* Ensure flex layout works for icons */
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    <script>
+        feather.replace();
+
+        // Account Page Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserProfile();
+        });
+
+        function loadUserProfile() {
+            const user = Auth.getCurrentUser();
+            if (!user) return;
+
+            document.getElementById('sidebar-name').textContent = user.name || 'User';
+            document.getElementById('sidebar-email').textContent = user.email;
+
+            document.getElementById('profile-email').value = user.email;
+            document.getElementById('profile-name').value = user.name || '';
+            document.getElementById('profile-bio').value = user.bio || '';
+        }
+
+        function handleProfileUpdate(e) {
+            e.preventDefault();
+            const name = document.getElementById('profile-name').value;
+            const bio = document.getElementById('profile-bio').value;
+
+            const result = Auth.updateProfile({ name, bio });
+            if (result.success) {
+                alert('Profile updated successfully!');
+                loadUserProfile();
+            } else {
+                alert(result.message || 'Error updating profile');
+            }
+        }
+
+        function handleChangePassword(e) {
+            e.preventDefault();
+            const currentPass = document.getElementById('current-password').value;
+            const newPass = document.getElementById('new-password').value;
+            const confirmPass = document.getElementById('confirm-new-password').value;
+
+            if (newPass !== confirmPass) {
+                alert('New passwords do not match');
+                return;
+            }
+
+            const result = Auth.changePassword(currentPass, newPass);
+            if (result.success) {
+                alert('Password updated successfully!');
+                document.getElementById('security-form').reset();
+            } else {
+                alert(result.message || 'Error changing password');
+            }
+        }
+    </script>
+    <script src="chatbot.js"></script>
+</body>
+
+
+</html>
