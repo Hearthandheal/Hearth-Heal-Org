@@ -103,13 +103,13 @@
     <!-- Auth Logic -->
     <script src="auth.js"></script>
     <script>
-        document.getElementById('loginForm').addEventListener('submit', (e) => {
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorDiv = document.getElementById('errorMsg');
 
-            const result = Auth.login(email, password);
+            const result = await Auth.login(email, password);
 
             if (result.success) {
                 // Auth.js handles redirect, but we can double check

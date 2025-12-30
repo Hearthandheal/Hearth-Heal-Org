@@ -104,7 +104,7 @@
 
     <script src="auth.js"></script>
     <script>
-        document.getElementById('signupForm').addEventListener('submit', (e) => {
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
@@ -117,7 +117,7 @@
                 return;
             }
 
-            const result = Auth.signup(email, password);
+            const result = await Auth.signup(email, password);
 
             if (result.success) {
                 window.location.href = 'index.html';

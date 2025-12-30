@@ -233,7 +233,7 @@
             }
         }
 
-        function handleChangePassword(e) {
+        async function handleChangePassword(e) {
             e.preventDefault();
             const currentPass = document.getElementById('current-password').value;
             const newPass = document.getElementById('new-password').value;
@@ -244,7 +244,7 @@
                 return;
             }
 
-            const result = Auth.changePassword(currentPass, newPass);
+            const result = await Auth.changePassword(currentPass, newPass);
             if (result.success) {
                 alert('Password updated successfully!');
                 document.getElementById('security-form').reset();
