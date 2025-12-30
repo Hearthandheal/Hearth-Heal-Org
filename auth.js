@@ -1,12 +1,29 @@
 /**
  * Hearth and Heal - Authentication Logic
  * Handles Login, Signup, Password Reset, and Session Protection
+ * Enhanced with password hashing and input sanitization
  */
 
 const Auth = {
     // Keys for localStorage
     USERS_KEY: 'hearth_users',
     CURRENT_USER_KEY: 'hearth_current_user',
+
+    // Simple password hashing using SHA-256
+    hashPassword: async (password) => {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    },
+
+    // Sanitize input to prevent XSS
+    sanitizeInput: (input) => {
+        const div = document.createElement('div');
+        div.textContent = input;
+        return div.innerHTML;
+    },
 
     // Initialize (helper to get data)
     getUsers: () => JSON.parse(localStorage.getItem(Auth.USERS_KEY) || '[]'),
@@ -76,9 +93,10 @@ const Auth = {
      * @param {string} email 
      * @param {string} password 
      */
-    login: (email, password) => {
+    login: async (email, password) => {
         const users = Auth.getUsers();
-        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+        const hashedPassword = await Auth.hashPassword(password);
+        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === hashedPassword);
 
         if (user) {
             Auth.setCurrentUser({ email: user.email, name: user.name || user.email.split('@')[0], bio: user.bio });
@@ -93,8 +111,11 @@ const Auth = {
      * @param {string} email 
      * @param {string} password 
      */
-    signup: (email, password) => {
+    signup: async (email, password) => {
         const users = Auth.getUsers();
+
+        // Sanitize email input
+        email = Auth.sanitizeInput(email.trim());
 
         if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
             return { success: false, message: 'Email already exists' };
@@ -109,7 +130,9 @@ const Auth = {
             return { success: false, message: 'Password must be at least 6 characters long' };
         }
 
-        const newUser = { email, password, name: email.split('@')[0], bio: '' };
+        // Hash password before storing
+        const hashedPassword = await Auth.hashPassword(password);
+        const newUser = { email, password: hashedPassword, name: email.split('@')[0], bio: '' };
         users.push(newUser);
         Auth.setUsers(users);
         Auth.setCurrentUser({ email: newUser.email, name: newUser.name, bio: newUser.bio });
@@ -147,7 +170,7 @@ const Auth = {
      * @param {string} oldPassword 
      * @param {string} newPassword 
      */
-    changePassword: (oldPassword, newPassword) => {
+    changePassword: async (oldPassword, newPassword) => {
         const currentUser = Auth.getCurrentUser();
         if (!currentUser) return { success: false, message: 'Not logged in' };
 
@@ -156,7 +179,8 @@ const Auth = {
 
         if (userIndex === -1) return { success: false, message: 'User not found' };
 
-        if (users[userIndex].password !== oldPassword) {
+        const hashedOldPassword = await Auth.hashPassword(oldPassword);
+        if (users[userIndex].password !== hashedOldPassword) {
             return { success: false, message: 'Incorrect current password' };
         }
 
@@ -164,7 +188,8 @@ const Auth = {
             return { success: false, message: 'New password must be at least 6 characters' };
         }
 
-        users[userIndex].password = newPassword;
+        const hashedNewPassword = await Auth.hashPassword(newPassword);
+        users[userIndex].password = hashedNewPassword;
         Auth.setUsers(users);
         return { success: true };
     },
