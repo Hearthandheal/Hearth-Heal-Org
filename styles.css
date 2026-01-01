@@ -1938,3 +1938,60 @@ input:checked+.slider:before {
         padding: 2rem 1.5rem;
     }
 }
+
+/* --- Staff Section (Static) --- */
+#staff {
+    width: 90%;
+    margin: 40px auto;
+    text-align: center;
+}
+
+#staff h2 {
+    margin-bottom: 20px;
+    font-size: 2em;
+    color: #333;
+}
+
+.staff-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+
+.staff-card {
+    width: 250px;
+    background: #f9f9f9;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s;
+}
+
+.staff-card:hover {
+    transform: translateY(-5px);
+}
+
+.staff-card img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.staff-card h3 {
+    margin: 10px 0 5px;
+    font-size: 1.2em;
+    color: #222;
+}
+
+.staff-card .role {
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+.staff-card .about {
+    font-size: 0.9em;
+    color: #666;
+}

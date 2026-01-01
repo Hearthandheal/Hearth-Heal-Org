@@ -213,7 +213,55 @@ const Auth = {
     },
 
     /**
+     * Request OTP
+     * @param {string} identifier 
+     * @param {string} type 'email' or 'phone'
+     */
+    requestOTP: async (identifier, type) => {
+        try {
+            const response = await fetch('http://localhost:3000/auth/otp/request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier, type })
+            });
+            const data = await response.json();
+            if (response.ok) return { success: true };
+            return { success: false, message: data.error || 'Failed to send OTP' };
+        } catch (error) {
+            console.error(error);
+            return { success: false, message: 'Network error' };
+        }
+    },
+
+    /**
+     * Verify OTP
+     * @param {string} identifier 
+     * @param {string} code 
+     */
+    verifyOTP: async (identifier, code) => {
+        try {
+            const response = await fetch('http://localhost:3000/auth/otp/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier, code })
+            });
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // Log user in
+                Auth.setCurrentUser({ email: identifier, name: data.user.name, bio: '' });
+                return { success: true };
+            }
+            return { success: false, message: data.error || 'Verification failed' };
+        } catch (error) {
+            console.error(error);
+            return { success: false, message: 'Network error' };
+        }
+    },
+
+    /**
      * Logout
+     * ...
      */
     logout: () => {
         localStorage.removeItem(Auth.CURRENT_USER_KEY);

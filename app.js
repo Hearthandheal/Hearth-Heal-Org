@@ -1,172 +1,386 @@
-require('dotenv').config();
+/**
+ * Bank-style payment system (Node.js, Express)
+ * Features: Secure invoice creation, payment orchestration, webhooks, reconciliation, logging
+ * Security: Helmet, rate limiting, input validation, webhook signature verification, idempotency
+ * Storage: In-memory Maps for demo (replace with DB: Postgres/MySQL)
+ */
+
+require("dotenv").config();
 const express = require("express");
-const crypto = require("crypto");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 const cors = require("cors");
+const crypto = require("crypto");
+const cron = require("node-cron");
+const winston = require("winston");
 
 const app = express();
-app.use(cors());
-app.use(express.json());
 
-// In-memory demo store (replace with DB in production)
-const store = { invoices: new Map(), payments: new Map() };
-
-function newRef() {
-    return "ECZ-" + Date.now() + "-" + Math.floor(Math.random() * 9999);
-}
-
-// --- Invoices ---
-
-// Create invoice
-app.post("/invoices", (req, res) => {
-    const { customerId, amount, currency = "KES", items } = req.body; // Added items for context if needed
-    const ref = newRef();
-    const invoice = {
-        id: crypto.randomUUID(),
-        reference_number: ref,
-        customer_id: customerId,
-        amount,
-        currency,
-        items, // Store items
-        status: "PENDING",
-        created_at: Date.now(),
-        expires_at: Date.now() + 24 * 60 * 60 * 1000
-    };
-    store.invoices.set(ref, invoice);
-    res.json(invoice);
+/* ----------------------------- Logging setup ----------------------------- */
+const logger = winston.createLogger({
+    level: "info",
+    format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json()
+    ),
+    transports: [new winston.transports.Console()]
 });
 
-// Check invoice status
+/* ----------------------------- Security setup ---------------------------- */
+app.use(helmet());
+app.use(cors({ origin: true }));
+app.use(express.json({ limit: "1mb" }));
+app.disable("x-powered-by");
+
+const limiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 300, // tune per needs
+    standardHeaders: true,
+    legacyHeaders: false
+});
+app.use(limiter);
+
+/* ----------------------------- In-memory store --------------------------- */
+// Replace with DB tables: invoices, payments, transactions, receipts, audit_logs
+const store = {
+    invoices: new Map(),     // key: reference_number -> invoice object
+    payments: new Map(),     // key: payment_id -> payment attempt
+    transactions: new Map(), // key: txn_id -> transaction detail
+    receipts: new Map(),     // key: receipt_serial -> receipt detail
+    audit: [],               // append-only audit events
+    otps: new Map()          // key: identifier (email/phone) -> { code, expiresAt }
+};
+
+/* ----------------------------- Helpers ---------------------------------- */
+const ENV = {
+    PORT: process.env.PORT || 3000,
+    BASE_URL: process.env.BASE_URL || "http://localhost:3000",
+    STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY || "",
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || "",
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || "",
+    MPESA_CONSUMER_KEY: process.env.MPESA_CONSUMER_KEY || "",
+    MPESA_CONSUMER_SECRET: process.env.MPESA_CONSUMER_SECRET || "",
+    MPESA_PASSKEY: process.env.MPESA_PASSKEY || "",
+    MPESA_SHORTCODE: process.env.MPESA_SHORTCODE || "",
+    MPESA_CALLBACK_URL: process.env.MPESA_CALLBACK_URL || "",
+    WEBHOOK_SHARED_SECRET: process.env.WEBHOOK_SHARED_SECRET || "change_me",
+    OTP_EXPIRY_MS: 5 * 60 * 1000 // 5 minutes
+};
+
+function newRef() {
+    return "ECZ-" + Date.now() + "-" + Math.floor(Math.random() * 999999);
+}
+function now() { return new Date().toISOString(); }
+
+function audit(action, payload = {}) {
+    const event = { time: now(), action, payload };
+    store.audit.push(event);
+    logger.info({ audit: event });
+}
+
+function hmacSha256Hex(secret, payloadString) {
+    return crypto.createHmac("sha256", secret).update(payloadString).digest("hex");
+}
+
+function isPositiveAmount(val) {
+    return typeof val === "number" && isFinite(val) && val > 0;
+}
+
+function issueReceipt(invoice) {
+    const serial = "R-" + Date.now() + "-" + Math.floor(Math.random() * 999999);
+    const receipt = {
+        serial,
+        invoice_ref: invoice.reference_number,
+        amount: invoice.amount,
+        currency: invoice.currency,
+        issued_at: now(),
+        customer_id: invoice.customer_id
+    };
+    store.receipts.set(serial, receipt);
+    return receipt;
+}
+
+/* ----------------------------- Auth/OTP API ----------------------------- */
+
+// Request OTP
+app.post("/auth/otp/request", (req, res) => {
+    try {
+        const { identifier, type } = req.body; // type: 'email' | 'phone'
+        if (!identifier || !type) return res.status(400).json({ error: "Missing identifier or type" });
+
+        // Generate 6-digit code
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = Date.now() + ENV.OTP_EXPIRY_MS;
+
+        store.otps.set(identifier, { code, expiresAt });
+
+        // In production, send via Email (e.g. SendGrid) or SMS (e.g. Twilio/Infobip)
+        // For demo/dev, we log it to console.
+        logger.info({ msg: "OTP GENERATED", identifier, code });
+        console.log(`[MOCK OTP] Sent to ${identifier}: ${code}`);
+
+        audit("OTP_REQUESTED", { identifier, type });
+        res.json({ message: "OTP sent successfully" });
+    } catch (err) {
+        logger.error({ err });
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+// Verify OTP
+app.post("/auth/otp/verify", (req, res) => {
+    try {
+        const { identifier, code } = req.body;
+        if (!identifier || !code) return res.status(400).json({ error: "Missing identifier or code" });
+
+        const record = store.otps.get(identifier);
+        if (!record) return res.status(400).json({ error: "Invalid or expired OTP" });
+
+        if (Date.now() > record.expiresAt) {
+            store.otps.delete(identifier);
+            return res.status(400).json({ error: "OTP expired" });
+        }
+
+        if (record.code !== code) {
+            return res.status(400).json({ error: "Invalid code" });
+        }
+
+        // Success
+        store.otps.delete(identifier); // consume OTP
+        audit("OTP_VERIFIED", { identifier });
+
+        // Return a session token or user object (Mock)
+        res.json({ success: true, user: { identifier, name: identifier.split('@')[0] || identifier } });
+
+    } catch (err) {
+        logger.error({ err });
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+/* ----------------------------- Invoice API ------------------------------- */
+// Create invoice
+app.post("/invoices", (req, res) => {
+    try {
+        const { customerId, amount, currency = "KES", description = "" } = req.body;
+        if (!customerId || !isPositiveAmount(amount)) {
+            return res.status(400).json({ error: "Invalid customerId or amount" });
+        }
+        const ref = newRef();
+        const invoice = {
+            id: crypto.randomUUID(),
+            reference_number: ref,
+            customer_id: String(customerId),
+            amount: Number(amount),
+            currency: String(currency).toUpperCase(),
+            description: String(description || ""),
+            status: "PENDING",
+            created_at: now(),
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        };
+        store.invoices.set(ref, invoice);
+        audit("INVOICE_CREATED", { reference_number: ref, amount: amount, currency });
+        res.json(invoice);
+    } catch (err) {
+        logger.error({ err });
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+// Get invoice status
 app.get("/invoices/:ref", (req, res) => {
     const invoice = store.invoices.get(req.params.ref);
     if (!invoice) return res.status(404).json({ error: "Not found" });
     res.json(invoice);
 });
 
-
-// --- Payments ---
-
-// Helper: M-Pesa STK Push (Mock implementation)
-async function mpesaStkPush({ phoneNumber, amount, reference_number }) {
-    console.log(`[Mock STK Push] Sending ${amount} request to ${phoneNumber} for ref ${reference_number}`);
-    // In real life:
-    // 1) Obtain OAuth token
-    // 2) Generate Password
-    // 3) POST to /stkpush
-
-    // Simulate Webhook callback after a delay
-    setTimeout(() => {
-        console.log(`[Mock STK Push] Simulating user payment for ${reference_number}`);
+/* ----------------------------- Payment Orchestration --------------------- */
+// Start payment attempt (channel: "card" | "bank" | "mpesa")
+app.post("/payments", (req, res) => {
+    try {
+        const { reference_number, channel } = req.body;
         const invoice = store.invoices.get(reference_number);
-        if (invoice) {
-            invoice.status = "PAID";
-            invoice.paid_at = Date.now();
-            invoice.receipt_serial = "R-" + Date.now();
+        if (!invoice) return res.status(404).json({ error: "Invoice not found" });
+        if (invoice.status !== "PENDING") {
+            return res.status(409).json({ error: "Invoice not payable" });
         }
-    }, 10000); // 10 seconds delay
+        const paymentId = crypto.randomUUID();
+        const payment = {
+            id: paymentId,
+            invoice_id: invoice.id,
+            invoice_ref: reference_number,
+            channel,
+            status: "INITIATED",
+            initiated_at: now()
+        };
+        store.payments.set(paymentId, payment);
+        audit("PAYMENT_INITIATED", { payment_id: paymentId, channel, reference_number });
 
-    return { request_id: "stk-" + Date.now() };
-}
-
-// Start payment
-app.post("/payments", async (req, res) => {
-    const { reference_number, channel, phoneNumber } = req.body; // Added phoneNumber for M-Pesa
-    const invoice = store.invoices.get(reference_number);
-    if (!invoice) return res.status(404).json({ error: "Invoice not found" });
-
-    // Create a payment attempt
-    const paymentId = crypto.randomUUID();
-    const payment = {
-        id: paymentId,
-        invoice_id: invoice.id,
-        channel,
-        status: "INITIATED",
-        initiated_at: Date.now()
-    };
-    store.payments.set(paymentId, payment);
-
-    let responseData = { payment_id: paymentId, status: "INITIATED" };
-
-    if (channel === 'mpesa') {
-        if (!phoneNumber) return res.status(400).json({ error: "Phone number required for M-Pesa" });
-        const stk = await mpesaStkPush({
-            phoneNumber,
-            amount: invoice.amount,
-            reference_number
-        });
-        responseData.message = "STK Push sent to phone.";
-        responseData.provider_ref = stk.request_id;
-    } else {
-        // Generic Redirect
-        responseData.redirect_url = `https://gateway.example/checkout?ref=${reference_number}&amount=${invoice.amount}`;
+        // Simulate channel routing:
+        if (channel === "card") {
+            // Redirect to your card gateway checkout (replace with real URL)
+            const checkoutUrl = `${ENV.BASE_URL}/demo/redirect?ref=${reference_number}&amount=${invoice.amount}`;
+            return res.json({ payment_id: paymentId, redirect_url: checkoutUrl });
+        } else if (channel === "mpesa") {
+            // STK Push trigger (stub)
+            // In production: call Daraja API and return user instruction
+            return res.json({
+                payment_id: paymentId,
+                message: "M-Pesa STK Push initiated. Check your phone to approve.",
+                invoice_ref: reference_number
+            });
+        } else if (channel === "bank") {
+            // Bank/virtual account flow (stub)
+            const virtualAccount = "VA-" + Math.floor(Math.random() * 999999);
+            return res.json({
+                payment_id: paymentId,
+                message: "Use the virtual account/reference to pay via bank transfer.",
+                virtual_account: virtualAccount,
+                amount: invoice.amount,
+                reference_number
+            });
+        } else {
+            return res.status(400).json({ error: "Unsupported channel" });
+        }
+    } catch (err) {
+        logger.error({ err });
+        res.status(500).json({ error: "Server error" });
     }
-
-    res.json(responseData);
 });
 
+/* ----------------------------- Webhooks --------------------------------- */
+/**
+ * Card/Bank-like webhook:
+ * - Expects body: { reference_number, status: "SUCCESS"|"FAILED", provider_txn_id, amount }
+ * - Validates HMAC signature in header: x-signature = HMAC_SHA256(secret, JSON.stringify(body))
+ * - Idempotent: only mark paid once
+ */
+app.post("/webhooks/bank", (req, res) => {
+    try {
+        const sig = req.headers["x-signature"];
+        const payloadStr = JSON.stringify(req.body);
+        const expected = hmacSha256Hex(ENV.WEBHOOK_SHARED_SECRET, payloadStr);
+        if (sig !== expected) {
+            audit("WEBHOOK_REJECTED", { reason: "invalid_signature" });
+            return res.status(401).json({ error: "Invalid signature" });
+        }
 
-// --- Webhooks ---
+        const { reference_number, status, provider_txn_id, amount } = req.body;
+        const invoice = store.invoices.get(reference_number);
+        if (!invoice) return res.status(404).end();
 
-// Signature Verification
-function verifySignature(req, secret) {
-    // If no secret is set in env, skip verification (dev mode) or fail safely. 
-    // For this demo, if secret is missing, we might match undefined or skip.
-    if (!secret) {
-        console.warn("No Webhook Secret configured. Skipping signature check.");
-        return true;
-    }
-    const signature = req.headers["x-signature"];
-    if (!signature) return false;
+        audit("WEBHOOK_RECEIVED", { channel: "bank", reference_number, status });
 
-    const payload = JSON.stringify(req.body);
-    const expected = crypto.createHmac("sha256", secret).update(payload).digest("hex");
-    return signature === expected;
-}
-
-// M-Pesa Webhook
-app.post("/webhooks/mpesa", (req, res) => {
-    if (!verifySignature(req, process.env.MPESA_SECRET)) {
-        console.error("Invalid M-Pesa signature");
-        return res.status(401).send("Invalid signature");
-    }
-
-    const { Body } = req.body;
-    const ref = Body?.stkCallback?.CallbackMetadata?.Item?.find(i => i.Name === "AccountReference")?.Value;
-    const resultCode = Body?.stkCallback?.ResultCode;
-
-    console.log(`[Webhook] M-Pesa callback for ${ref}, code: ${resultCode}`);
-
-    const invoice = store.invoices.get(ref);
-    if (invoice) {
-        if (resultCode === 0) {
+        if (status === "SUCCESS" && invoice.status !== "PAID") {
+            // Basic amount check
+            if (Number(amount) !== Number(invoice.amount)) {
+                audit("AMOUNT_MISMATCH", { reference_number, expected: invoice.amount, got: amount });
+                // Depending on policy, mark as REVIEW or reject
+            }
             invoice.status = "PAID";
-            invoice.paid_at = Date.now();
-            invoice.receipt_serial = "R-" + Date.now();
-        } else {
+            invoice.paid_at = now();
+            const receipt = issueReceipt(invoice);
+            audit("RECEIPT_ISSUED", { receipt_serial: receipt.serial, reference_number });
+        } else if (status === "FAILED") {
             invoice.status = "FAILED";
         }
+
+        res.status(200).end();
+    } catch (err) {
+        logger.error({ err });
+        res.status(500).end();
     }
-    res.status(200).end();
 });
 
-// Card/Generic Webhook
-app.post("/webhooks/card", (req, res) => {
-    const { reference_number, status } = req.body;
+/**
+ * M-Pesa webhook (Daraja STK callback format varies; this is a simplified handler)
+ * In production: validate origin/signature per provider docs.
+ */
+app.post("/webhooks/mpesa", (req, res) => {
+    try {
+        // Assume payload: { Body: { stkCallback: { ResultCode, CallbackMetadata: { Item: [{Name, Value}...] } } } }
+        const body = req.body?.Body?.stkCallback;
+        audit("WEBHOOK_RECEIVED", { channel: "mpesa", raw: !!body });
 
-    const invoice = store.invoices.get(reference_number);
-    if (!invoice) return res.status(404).end();
+        if (!body) return res.status(400).end();
 
-    if (status === "SUCCESS" && invoice.status !== "PAID") {
-        invoice.status = "PAID";
-        invoice.paid_at = Date.now();
-        invoice.receipt_serial = "R-" + Date.now();
+        const resultCode = body.ResultCode;
+        const items = body.CallbackMetadata?.Item || [];
+        const refItem = items.find(i => i.Name === "AccountReference");
+        const amountItem = items.find(i => i.Name === "Amount");
+        const ref = refItem?.Value;
+        const amount = amountItem?.Value;
+
+        const invoice = store.invoices.get(ref);
+        if (!invoice) return res.status(404).end();
+
+        if (resultCode === 0 && invoice.status !== "PAID") {
+            invoice.status = "PAID";
+            invoice.paid_at = now();
+            const receipt = issueReceipt(invoice);
+            audit("RECEIPT_ISSUED", { receipt_serial: receipt.serial, reference_number: ref, amount });
+        } else if (resultCode !== 0) {
+            invoice.status = "FAILED";
+        }
+
+        res.status(200).end();
+    } catch (err) {
+        logger.error({ err });
+        res.status(500).end();
     }
-    if (status === "FAILED") {
-        invoice.status = "FAILED";
-    }
-
-    res.status(200).end();
 });
 
+/* ----------------------------- Receipts & Status ------------------------- */
+app.get("/receipts/:serial", (req, res) => {
+    const receipt = store.receipts.get(req.params.serial);
+    if (!receipt) return res.status(404).json({ error: "Not found" });
+    res.json(receipt);
+});
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Payment server running on port ${PORT}`));
+/* ----------------------------- Reconciliation Job ----------------------- */
+/**
+ * Nightly reconciliation:
+ * - Pull settlement reports from providers (stubbed)
+ * - Cross-check invoices marked PAID against settlement lines
+ * - Flag mismatches for manual review
+ */
+cron.schedule("0 2 * * *", async () => {
+    try {
+        audit("RECONCILIATION_START", {});
+        // Stub: simulate settlement data
+        const settlementRefs = Array.from(store.invoices.values())
+            .filter(inv => inv.status === "PAID")
+            .map(inv => inv.reference_number);
+
+        // Check each paid invoice is present in settlement
+        for (const inv of store.invoices.values()) {
+            if (inv.status === "PAID") {
+                const found = settlementRefs.includes(inv.reference_number);
+                if (!found) {
+                    audit("RECON_FLAG_MISSING", { reference_number: inv.reference_number });
+                }
+            }
+        }
+        audit("RECONCILIATION_COMPLETE", {});
+    } catch (err) {
+        logger.error({ err });
+        audit("RECONCILIATION_ERROR", { error: String(err) });
+    }
+});
+
+/* ----------------------------- Demo endpoints ---------------------------- */
+// Simple demo redirect landing
+app.get("/demo/redirect", (req, res) => {
+    res.send("Demo checkout landing. In production, redirect to your gateway UI.");
+});
+
+/* ----------------------------- Error handling ---------------------------- */
+app.use((err, req, res, next) => {
+    logger.error({ err });
+    res.status(500).json({ error: "Unexpected error" });
+});
+
+/* ----------------------------- Start server ------------------------------ */
+app.listen(ENV.PORT, () => {
+    logger.info({ msg: `Server running on port ${ENV.PORT}` });
+});

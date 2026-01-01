@@ -260,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const city = document.getElementById('cust-city').value;
             const street = document.getElementById('cust-street').value;
-            const notes = document.getElementById('cust-notes').value;
+            // const notes = document.getElementById('cust-notes').value; // Optional
 
             const trxCode = document.getElementById('payment-code').value;
 
@@ -268,6 +268,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert("Please fill in your Name, Phone, Delivery Location, and Transaction Code.");
                 return;
             }
+
+            // Create Payment/Order on Backend
+            // For now, we simulate by sending WhatsApp
 
             // Build WhatsApp Message
             let msg = `*New Order - ${name}*\n\n`;
@@ -284,15 +287,80 @@ document.addEventListener('DOMContentLoaded', () => {
             msg += `Phone: ${phone}\n`;
             msg += `Email: ${email}\n`;
             msg += `Location: ${city}, ${street}\n`;
-            if (notes) msg += `Notes: ${notes}\n`;
+            // if (notes) msg += `Notes: ${notes}\n`;
 
             const adminPhone = "254114433429";
             const url = `https://wa.me/${adminPhone}?text=${encodeURIComponent(msg)}`;
 
-            // Clear cart? Maybe not until they actually send.
-            localStorage.removeItem(CART_KEY); // Assume success for now
-
+            localStorage.removeItem(CART_KEY); // Clear cart
             window.open(url, '_blank');
+            window.location.href = 'index.html';
+        });
+    }
+
+    // --- Cart Page Specifics ---
+    if (window.location.pathname.includes('cart.html')) {
+        renderCartPage();
+    }
+
+    function renderCartPage() {
+        const cartBody = document.getElementById('cart-body');
+        const cartTotal = document.getElementById('cart-total');
+        const cart = getCart();
+
+        cartBody.innerHTML = '';
+        let total = 0;
+
+        if (cart.length === 0) {
+            cartBody.innerHTML = '<tr><td colspan="5">Your cart is empty.</td></tr>';
+            cartTotal.innerText = 'Grand Total: $0.00';
+            return;
+        }
+
+        cart.forEach((item, index) => {
+            const priceVal = parseFloat(item.price.replace('$', ''));
+            const qty = parseInt(item.qty);
+            const lineTotal = priceVal * qty;
+            total += lineTotal;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <div style="font-weight:600;">${item.title}</div>
+                    <div style="font-size:0.85rem; color:#666;">${item.size || 'Std'}</div>
+                </td>
+                <td>${item.price}</td>
+                <td>
+                    <input type="number" value="${qty}" min="1" max="20" data-index="${index}" class="cart-qty-input">
+                </td>
+                <td>$${lineTotal.toFixed(2)}</td>
+                <td><button class="btn-remove" data-index="${index}">Remove</button></td>
+            `;
+            cartBody.appendChild(row);
+        });
+
+        cartTotal.innerText = 'Grand Total: $' + total.toFixed(2);
+
+        // Event Listeners for Cart Actions
+        document.querySelectorAll('.btn-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const index = e.target.dataset.index;
+                cart.splice(index, 1);
+                saveCart(cart);
+                renderCartPage();
+            });
+        });
+
+        document.querySelectorAll('.cart-qty-input').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const index = e.target.dataset.index;
+                const newQty = parseInt(e.target.value);
+                if (newQty > 0) {
+                    cart[index].qty = newQty;
+                    saveCart(cart);
+                    renderCartPage();
+                }
+            });
         });
     }
 
