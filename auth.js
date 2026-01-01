@@ -219,7 +219,7 @@ const Auth = {
      */
     requestOTP: async (identifier, type) => {
         try {
-            const response = await fetch('http://localhost:3000/auth/otp/request', {
+            const response = await fetch('https://hearth-heal-org.onrender.com/auth/otp/request', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ identifier, type })
@@ -240,7 +240,7 @@ const Auth = {
      */
     verifyOTP: async (identifier, code) => {
         try {
-            const response = await fetch('http://localhost:3000/auth/otp/verify', {
+            const response = await fetch('https://hearth-heal-org.onrender.com/auth/otp/verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ identifier, code })
