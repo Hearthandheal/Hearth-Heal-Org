@@ -288,12 +288,12 @@ const olafBrain = {
       "sensitization": "Awareness workshops and civic education to help societies function better! 📢"
     },
     shop: {
-      book: "Our CEO wrote a wonderful book: <b>'I Chose To Let You Down'</b> ($15.00). It's about the route from heartbreak to healing. 📖",
-      apparel: "We have branded Hoodies ($45), Sweatshirts ($40), and Polo Shirts ($35)! 👕",
-      accessories: "Keep warm with our Branded Scarves ($20) or look cool in a Cap ($20)! 🧢"
+      book: "Our CEO wrote a wonderful book: <b>'I Chose To Let You Down'</b> (KSH 1,000). It's about the route from heartbreak to healing. 📖",
+      apparel: "We have branded Hoodies (KSH 2,500), Sweatshirts (KSH 2,000), T-Shirts (KSH 750), and Polo Shirts (KSH 1,000)! 👕",
+      accessories: "We have Headbands (KSH 500), Scarves (KSH 600), and Baseball Caps (KSH 500)! 🧢"
     },
     donation: {
-      impact: "Every bit helps! $10 provides materials, $50 supports a group session, and $250 rents a safe space for an entire month! 💖",
+      impact: "Every bit helps! KSH 1,000 provides materials, KSH 5,000 supports a group session, and KSH 25,000 rents a safe space for an entire month! 💖",
       methods: "You can use PayPal, M-Pesa (Paybill: 123456, Acc: HEARTH), or Bank Transfer! Check the <a href='donate.html'>Donate</a> page for details."
     },
     contact: {

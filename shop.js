@@ -214,8 +214,8 @@ document.addEventListener('DOMContentLoaded', () => {
             cartItemsContainer.innerHTML = '<p>Your cart is empty.</p>';
         } else {
             cart.forEach((item, index) => {
-                // Parse price "$15.00" -> 15.00
-                const priceVal = parseFloat(item.price.replace('$', ''));
+                // Parse price "KSH 1000" -> 1000
+                const priceVal = parseFloat(item.price.replace('KSH ', ''));
                 const lineTotal = priceVal * parseInt(item.qty);
                 total += lineTotal;
 
@@ -226,12 +226,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         <strong>${item.title}</strong><br>
                         <small>Size: ${item.size} | Qty: ${item.qty}</small>
                     </div>
-                    <span>$${lineTotal.toFixed(2)}</span>
+                    <span>KSH ${lineTotal.toLocaleString()}</span>
                 `;
                 cartItemsContainer.appendChild(row);
             });
         }
-        cartTotalEl.innerText = '$' + total.toFixed(2);
+        cartTotalEl.innerText = 'KSH ' + total.toLocaleString();
 
 
         // Payment Tabs Logic
@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const variation = item.size ? item.size : 'Std';
                 msg += `- ${item.qty}x ${item.title} [${variation}] @ ${item.price}\n`;
             });
-            msg += `\n*Total: $${total.toFixed(2)}*\n`;
+            msg += `\n*Total: KSH ${total.toLocaleString()}*\n`;
             msg += `----------------\n`;
             msg += `*Payment Details:*\n`;
             msg += `Transaction Code: ${trxCode}\n`;
@@ -313,12 +313,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (cart.length === 0) {
             cartBody.innerHTML = '<tr><td colspan="5">Your cart is empty.</td></tr>';
-            cartTotal.innerText = 'Grand Total: $0.00';
+            cartTotal.innerText = 'Grand Total: KSH 0';
             return;
         }
 
         cart.forEach((item, index) => {
-            const priceVal = parseFloat(item.price.replace('$', ''));
+            const priceVal = parseFloat(item.price.replace('KSH ', ''));
             const qty = parseInt(item.qty);
             const lineTotal = priceVal * qty;
             total += lineTotal;
@@ -333,13 +333,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>
                     <input type="number" value="${qty}" min="1" max="20" data-index="${index}" class="cart-qty-input">
                 </td>
-                <td>$${lineTotal.toFixed(2)}</td>
+                <td>KSH ${lineTotal.toLocaleString()}</td>
                 <td><button class="btn-remove" data-index="${index}">Remove</button></td>
             `;
             cartBody.appendChild(row);
         });
 
-        cartTotal.innerText = 'Grand Total: $' + total.toFixed(2);
+        cartTotal.innerText = 'Grand Total: KSH ' + total.toLocaleString();
 
         // Event Listeners for Cart Actions
         document.querySelectorAll('.btn-remove').forEach(btn => {
