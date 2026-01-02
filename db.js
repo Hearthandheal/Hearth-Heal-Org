@@ -6,34 +6,52 @@ const path = require('path');
 let pool;
 let sqlite;
 
-const isProduction = process.env.NODE_ENV === 'production' || !!process.env.DATABASE_URL;
+const isProduction = !!process.env.DATABASE_URL;
 
 if (isProduction) {
     pool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false } // Required for many hosted DBs like Render/Neon
+        ssl: { rejectUnauthorized: false }
     });
     console.log("Using PostgreSQL Database");
 } else {
-    // Local development uses SQLite for ease of setup
     sqlite = new Database(path.join(__dirname, 'hearth.db'));
     console.log("Using SQLite Database");
 }
 
+// Helper to normalize placeholders for Postgres if needed
+function formatQuery(text) {
+    if (!isProduction || typeof text !== 'string') return text;
+    let index = 1;
+    return text.replace(/\?/g, () => `$${index++}`);
+}
+
 // Helper to run queries across either DB
-async function query(text, params) {
-    if (isProduction) {
-        return (await pool.query(text, params)).rows;
-    } else {
-        return sqlite.prepare(text).all(params || []);
+async function query(text, params = []) {
+    const formatted = formatQuery(text);
+    try {
+        if (isProduction) {
+            return (await pool.query(formatted, params)).rows;
+        } else {
+            return sqlite.prepare(text).all(params);
+        }
+    } catch (err) {
+        console.error("DB Query Error:", { formatted, params, error: err.message });
+        throw err;
     }
 }
 
-async function run(text, params) {
-    if (isProduction) {
-        await pool.query(text, params);
-    } else {
-        sqlite.prepare(text).run(params || []);
+async function run(text, params = []) {
+    const formatted = formatQuery(text);
+    try {
+        if (isProduction) {
+            await pool.query(formatted, params);
+        } else {
+            sqlite.prepare(text).run(params);
+        }
+    } catch (err) {
+        console.error("DB Run Error:", { formatted, params, error: err.message });
+        throw err;
     }
 }
 
@@ -73,7 +91,11 @@ const initDb = async () => {
     ];
 
     for (const schema of schemas) {
-        await run(schema);
+        try {
+            await run(schema);
+        } catch (err) {
+            console.warn("Table initialization hint:", err.message);
+        }
     }
 };
 

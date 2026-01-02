@@ -99,6 +99,11 @@ function verifyJwt(token) {
     throw new Error("Invalid token");
 }
 
+function getUuid() {
+    if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+    return crypto.randomBytes(16).toString("hex");
+}
+
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 10,
@@ -110,10 +115,12 @@ const authLimiter = rateLimit({
 app.post("/request-verification", authLimiter, async (req, res) => {
     try {
         const { email } = req.body;
-        if (!email) return res.status(400).json({ error: "Email required" });
+        if (!email || typeof email !== "string") {
+            return res.status(400).json({ error: "Valid email required" });
+        }
 
         const code = generateOtp();
-        const ref = crypto.randomUUID();
+        const ref = getUuid();
         const codeHash = bcrypt.hashSync(code, 8);
 
         await db.run(
@@ -124,7 +131,7 @@ app.post("/request-verification", authLimiter, async (req, res) => {
         await sendEmail(email, "Verify Your Email", `Your code is ${code}. It expires in 10 minutes.`);
         res.json({ ref, message: "Verification code sent" });
     } catch (err) {
-        logger.error({ err });
+        logger.error("Signup request failed", { error: err.message, stack: err.stack });
         res.status(500).json({ error: "Server error" });
     }
 });
@@ -156,15 +163,19 @@ app.post("/verify-email", authLimiter, async (req, res) => {
 app.post("/login", authLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ error: "Email and password required" });
+        }
+
         const users = await db.query(`SELECT * FROM users WHERE identifier = ? AND verified = TRUE`, [email]);
         const user = users[0];
 
-        if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+        if (!user || !user.password_hash || !bcrypt.compareSync(password, user.password_hash)) {
             return res.status(400).json({ error: "Invalid credentials" });
         }
 
         const otp = generateOtp();
-        const ref = crypto.randomUUID();
+        const ref = getUuid();
         const otpHash = bcrypt.hashSync(otp, 8);
 
         await db.run(
@@ -175,7 +186,7 @@ app.post("/login", authLimiter, async (req, res) => {
         await sendEmail(email, "Login OTP", `Your OTP is ${otp}. Expires in 5 minutes.`);
         res.json({ ref, message: "OTP sent" });
     } catch (err) {
-        logger.error({ err });
+        logger.error("Login attempt failed", { error: err.message, stack: err.stack });
         res.status(500).json({ error: "Server error" });
     }
 });
@@ -183,17 +194,19 @@ app.post("/login", authLimiter, async (req, res) => {
 app.post(["/auth/otp/verify", "/verify-otp"], authLimiter, async (req, res) => {
     try {
         const { ref, otp } = req.body;
+        if (!ref || !otp) return res.status(400).json({ error: "Reference and OTP required" });
+
         const records = await db.query(`SELECT * FROM otps WHERE ref = ?`, [ref]);
         const record = records[0];
 
         if (!record || Date.now() > record.expires_at) return res.status(400).json({ error: "Invalid or expired OTP" });
-        if (!bcrypt.compareSync(otp, record.otp_hash)) return res.status(400).json({ error: "Invalid OTP" });
+        if (!record.otp_hash || !bcrypt.compareSync(otp, record.otp_hash)) return res.status(400).json({ error: "Invalid OTP" });
 
         await db.run(`DELETE FROM otps WHERE ref = ?`, [ref]);
         const token = signJwt({ email: record.identifier });
         res.json({ success: true, token, user: { email: record.identifier } });
     } catch (err) {
-        logger.error({ err });
+        logger.error("OTP verification failed", { error: err.message, stack: err.stack });
         res.status(500).json({ error: "Server error" });
     }
 });
