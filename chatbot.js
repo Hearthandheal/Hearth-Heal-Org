@@ -1,237 +1,330 @@
-// Snowy - Simple Widget Chatbot
+/**
+ * Olaf - Wellness Companion Chatbot
+ * Hearth & Heal Organization
+ */
 
 const chatbotHTML = `
-<div id="snowy">
-    <svg id="snowy-svg" width="120" height="200" viewBox="0 0 120 200">
-        <!-- Bottom circle -->
-        <circle cx="60" cy="150" r="40" fill="#fff" stroke="#000" stroke-width="2"/>
-        <!-- Middle circle -->
-        <circle cx="60" cy="90" r="30" fill="#fff" stroke="#000" stroke-width="2"/>
-        <!-- Head circle -->
-        <circle cx="60" cy="40" r="20" fill="#fff" stroke="#000" stroke-width="2"/>
-        <!-- Eyes -->
-        <circle cx="52" cy="35" r="3" fill="#000"/>
-        <circle cx="68" cy="35" r="3" fill="#000"/>
-        <!-- Nose -->
-        <polygon points="60,40 80,45 60,50" fill="orange"/>
-        <!-- Arms -->
-        <line id="left-arm" x1="30" y1="90" x2="10" y2="60" stroke="#654321" stroke-width="4"/>
-        <line id="right-arm" x1="90" y1="90" x2="110" y2="60" stroke="#654321" stroke-width="4"/>
-    </svg>
-    <h3>⛄ Snowy the Chatbot</h3>
-    <div id="chat-log"></div>
-    <input id="chat-input" type="text" placeholder="Say hi..." />
+<div id="olaf-container">
+    <div id="olaf-widget">
+        <div class="olaf-chat-body">
+            <div class="olaf-header">
+                <div class="olaf-header-info">
+                    <h3>⛄ Olaf</h3>
+                    <p>Wellness Companion</p>
+                </div>
+                <button id="close-chat" aria-label="Close Chat">&times;</button>
+            </div>
+            <div id="chat-log"></div>
+            <div class="chat-input-area">
+                <input id="chat-input" type="text" placeholder="I like warm hugs! Say hi..." />
+                <button id="send-btn" aria-label="Send Message"><i data-feather="send"></i></button>
+            </div>
+        </div>
+    </div>
+    <div id="olaf-trigger" title="Chat with Olaf">
+        <img src="assets/olaf_chatbot.jpg" alt="Olaf Character">
+        <div class="olaf-status"></div>
+    </div>
 </div>
 `;
 
 const chatbotStyles = `
 <style>
-  #snowy {
+  #olaf-container {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 300px;
-    border: 2px solid #88c;
-    border-radius: 15px;
-    background: #f0f8ff; /* AliceBlue */
-    padding: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    bottom: 30px;
+    right: 30px;
+    z-index: 10000;
     font-family: 'Outfit', sans-serif;
-    z-index: 9999;
-    text-align: center;
-    animation: bounce 3s infinite;
-    cursor: pointer; /* Interaction hint */
-    transition: right 0.5s ease, left 0.5s ease; /* Smooth movement */
   }
 
-  @keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+  /* Trigger Button */
+  #olaf-trigger {
+    width: 85px;
+    height: 85px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 3px solid #00E676;
+    position: relative;
+    padding: 0;
+    overflow: visible;
   }
 
-  #snowy-svg {
-      height: 80px;
-      width: auto;
-      margin-bottom: -10px;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  #olaf-trigger img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
   }
 
-  /* User Defined Animations */
-  #left-arm {
-    transform-origin: 30px 90px;
-    animation: wave 2s infinite;
+  #olaf-trigger:hover {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 15px 40px rgba(0, 230, 118, 0.25);
   }
 
-  @keyframes wave {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(-20deg); }
+  .olaf-status {
+      position: absolute;
+      bottom: 5px;
+      right: 5px;
+      width: 18px;
+      height: 18px;
+      background: #00E676;
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   }
 
-  .fast-wave {
-      animation-duration: 0.2s !important;
+  /* Chat Widget */
+  #olaf-widget {
+    display: none;
+    width: 380px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    overflow: hidden;
+    flex-direction: column;
+    margin-bottom: 25px;
+    border: 1px solid rgba(0, 230, 118, 0.1);
+    transform-origin: bottom right;
   }
 
-  #chat-log { 
-    max-height: 200px; 
-    overflow-y: auto; 
-    margin-bottom: 10px;
+  #olaf-widget.active {
+    display: flex;
+    animation: olafPop 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes olafPop {
+      from { opacity: 0; transform: scale(0.8) translateY(40px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .olaf-header {
+    background: linear-gradient(135deg, #00C853, #00E676);
+    color: white;
+    padding: 25px 20px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    border-bottom: 4px solid rgba(255,255,255,0.2);
+  }
+
+  .olaf-header-info h3 { 
+      margin: 0; 
+      font-size: 1.4rem; 
+      font-weight: 700;
+      letter-spacing: 0.5px;
+  }
+  .olaf-header-info p { 
+      margin: 2px 0 0; 
+      font-size: 0.85rem; 
+      opacity: 0.95;
+      font-weight: 500;
+  }
+
+  #close-chat {
+    background: rgba(0,0,0,0.1);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s;
+  }
+
+  #close-chat:hover { background: rgba(0,0,0,0.2); }
+
+  #chat-log {
+    height: 400px;
+    overflow-y: auto;
+    padding: 25px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    text-align: left; /* Reset text align for messages */
-    cursor: auto;
-  }
-  
-  #chat-input { 
-    width: 90%; 
-    padding: 8px; 
-    margin-top: 5px; 
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    cursor: text;
+    gap: 15px;
+    background: #fdfdfd;
   }
 
-  /* Message Styles */
-  .msg-user { color: #333; background: #e0e0e0; padding: 5px 10px; border-radius: 10px; align-self: flex-end; max-width: 90%; font-size: 0.9rem; }
-  .msg-ai { color: #0044cc; background: white; padding: 5px 10px; border-radius: 10px; border: 1px solid #cce5ff; align-self: flex-start; max-width: 90%; font-size: 0.9rem; }
+  .chat-msg {
+    max-width: 80%;
+    padding: 14px 18px;
+    border-radius: 20px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    position: relative;
+    word-wrap: break-word;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
 
-  #snowy h3 {
-      margin-top: 5px;
-      color: #1565C0;
-      border-bottom: 1px solid #ddd;
-      padding-bottom: 5px;
+  .msg-ai {
+    align-self: flex-start;
+    background: white;
+    color: #444;
+    border-bottom-left-radius: 5px;
+    border: 1px solid #f0f0f0;
+  }
+
+  .msg-user {
+    align-self: flex-end;
+    background: #00C853;
+    color: white;
+    border-bottom-right-radius: 5px;
+    font-weight: 500;
+  }
+
+  .chat-input-area {
+    padding: 20px;
+    display: flex;
+    gap: 12px;
+    border-top: 1px solid #f0f0f0;
+    background: white;
+  }
+
+  #chat-input {
+    flex: 1;
+    border: 1px solid #eee;
+    padding: 12px 20px;
+    border-radius: 30px;
+    outline: none;
+    font-family: inherit;
+    font-size: 0.95rem;
+    background: #f9f9f9;
+    transition: all 0.3s;
+  }
+
+  #chat-input:focus {
+      background: white;
+      border-color: #00E676;
+      box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.1);
+  }
+
+  #send-btn {
+    background: #00C853;
+    color: white;
+    border: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+
+  #send-btn:hover {
+      background: #00E676;
+      transform: scale(1.05);
+      box-shadow: 0 5px 15px rgba(0, 200, 83, 0.3);
+  }
+
+  #send-btn svg { width: 22px; height: 22px; }
+
+  /* Mobile Tweaks */
+  @media (max-width: 480px) {
+    #olaf-widget { width: 90vw; right: -10vw; position: relative; }
+    #olaf-container { bottom: 20px; right: 20px; }
   }
 </style>
 `;
 
-// --- KNOWLEDGE BASE ---
-const knowledgeBase = {
-    mission: "Hearth & Heal exists to provide a safe, inclusive, and restorative environment for individuals navigating personal adversity, relational dysfunction and social marginalization.",
-    vision: "Our vision is to heal the world and make it habitable for every individual.",
-    founder: "Our wonderful leadership is guided by **Mr. John Haggee Ouma**, our CEO and Founder. He has such a big heart!",
-    values: [
-        "**Compassion over Judgement** - We meet every story with tenderness.",
-        "**Truth Rooted in God’s Word** - Finding clarity and divine purpose.",
-        "**Dignity for Every Individual** - Everyone is worth it!",
-        "**Healing Through Community** - We are better together.",
-        "**Empowerment Through Self-Help** - Helping you walk your own journey."
-    ],
-    contact: {
-        address: "123 Wellness Way, Serenity City",
-        email: "hello@hearthandheal.org",
-        phone: "(555) 123-4567"
-    },
-    services: [
-        { name: "Spiritual Care", desc: "Guided reflections, prayer circles, and spiritual companionship." },
-        { name: "Literature & Authorship", desc: "Our published books and writing workshops." },
-        { name: "Creative Healing", desc: "Expressive arts, bonfires, and dance therapy! So fun!" },
-        { name: "Recovery Room", desc: "Safe spaces for confessions and unpacking ordeals." },
-        { name: "Resource Navigation", desc: "Help with basic needs and legal aid." },
-        { name: "Dysfunctionality Sensitization", desc: "Awareness workshops and civic education." }
-    ]
+// --- OLAF KNOWLEDGE ---
+const olafBrain = {
+    greetings: ["Hi! I'm Olaf and I like warm hugs! 🤗", "Hello there! Isn't it a lovely day for starting over? ✨", "Look at me! I'm a talking snowman! ☃️"],
+    personality: ["warm hugs", "summer", "melting", "happiness", "joy", "friends", "reindeer", "carrot"],
+    context: {
+        mission: "At Hearth & Heal, we believe 'We don’t chase flawless outcomes – We pursue wholeness, grace, and the courage to begin again.' 💚",
+        vision: "Our vision is to heal the world and make it habitable for every individual. That's a lot of hugs! 🌍",
+        leadership: "We're lead by our Founder, <b>Mr. John Haggee Ouma</b>. He has a heart even warmer than a bonfire! 🔥",
+        services: ["Spiritual Care", "Recovery Room", "Creative Healing", "Literature & Authorship"],
+        whatsapp: "https://wa.me/254114433429"
+    }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Remove old container if it exists (cleanup)
-    const oldContainer = document.getElementById('ai-chatbot-container');
-    if (oldContainer) oldContainer.remove();
-    const oldWidget = document.getElementById('snowy-chatbot');
-    if (oldWidget) oldWidget.remove();
-    const reallyOldWidget = document.getElementById('snowy');
-    if (reallyOldWidget) reallyOldWidget.remove();
-
-
-    // 2. Inject New Widget
+    // 1. Setup
     document.body.insertAdjacentHTML('beforeend', chatbotHTML);
     document.head.insertAdjacentHTML('beforeend', chatbotStyles);
+    if (window.feather) feather.replace();
 
-    // 3. Logic
-    const snowy = document.getElementById("snowy"); // Changed ID to snowy
-    const log = document.getElementById("chat-log");
-    const input = document.getElementById("chat-input");
+    const trigger = document.getElementById('olaf-trigger');
+    const widget = document.getElementById('olaf-widget');
+    const closeBtn = document.getElementById('close-chat');
+    const chatLog = document.getElementById('chat-log');
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
 
-    // Click to Toggle Position Logic
-    snowy.addEventListener("click", (e) => {
-        // Prevent moving when clicking input or selecting text in log
-        if (e.target === input || e.target.closest('#chat-log')) return;
+    // 2. Logic
+    trigger.onclick = () => {
+        widget.classList.add('active');
+        trigger.style.display = 'none';
 
-        snowy.style.right = snowy.style.right === "20px" ? "auto" : "20px";
-        snowy.style.left = snowy.style.left === "20px" ? "auto" : "20px";
-    });
-
-    // Handle Input
-    input.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-            const userText = input.value.trim();
-            if (!userText) return;
-
-            // User Message
-            log.innerHTML += `<div class="msg-user"><b>You:</b> ${userText}</div>`;
-            input.value = "";
-
-            // Fast Wave Reaction
-            const leftArm = document.getElementById('left-arm');
-            if (leftArm) leftArm.classList.add('fast-wave');
-
-            // AI Response (Using our Logic)
+        // Introductory message
+        if (chatLog.children.length === 0) {
             setTimeout(() => {
-                const response = getAiResponse(userText);
-                log.innerHTML += `<div class="msg-ai"><b>Snowy:</b> ${response}</div>`;
-                log.scrollTop = log.scrollHeight; // Auto scroll
-
-                // Stop Fast Wave
-                if (leftArm) leftArm.classList.remove('fast-wave');
-            }, 500); // 0.5s reaction time
-
-            log.scrollTop = log.scrollHeight;
+                say(olafBrain.greetings[Math.floor(Math.random() * olafBrain.greetings.length)], 'ai');
+                setTimeout(() => {
+                    say("How can I help you on your journey to wholeness today? I can tell you about our mission, services, or just give you a virtual hug! 🤗", 'ai');
+                }, 1000);
+            }, 500);
         }
-    });
-});
+    };
 
-// --- REUSED INTELLIGENCE LOGIC ---
-function getAiResponse(input) {
-    const lowerInput = input.toLowerCase();
+    closeBtn.onclick = () => {
+        widget.classList.remove('active');
+        trigger.style.display = 'flex';
+    };
 
-    // 1. Mission & Vision
-    if (lowerInput.includes('mission')) return `Our Mission:<br>"${knowledgeBase.mission}"<br><br>It warms my heart! 🔥`;
-    if (lowerInput.includes('vision')) return `Our Vision:<br>"${knowledgeBase.vision}"<br><br>Clear as a crisp winter morning! ☀️`;
-
-    // 2. Values
-    if (lowerInput.includes('values') || lowerInput.includes('stand for') || lowerInput.includes('belief')) {
-        let valuesList = knowledgeBase.values.map(v => `• ${v}`).join('<br>');
-        return `We believe in kindness like falling snow! ❄️ Here they are:<br><br>${valuesList}`;
+    function say(text, sender) {
+        const msg = document.createElement('div');
+        msg.className = `chat-msg msg-${sender}`;
+        msg.innerHTML = text;
+        chatLog.appendChild(msg);
+        chatLog.scrollTop = chatLog.scrollHeight;
     }
 
-    // 3. Team / Founder
-    if (lowerInput.includes('founder') || lowerInput.includes('ceo') || lowerInput.includes('john') || lowerInput.includes('who runs')) {
-        return `That's **Mr. John Haggee Ouma**! He's the coolest (pun intended)! 😎`;
+    function processInput() {
+        const text = chatInput.value.trim();
+        if (!text) return;
+
+        say(text, 'user');
+        chatInput.value = '';
+
+        setTimeout(() => {
+            const response = getOlafThinking(text);
+            say(response, 'ai');
+        }, 800);
     }
 
-    // 4. Services
-    const matchedService = knowledgeBase.services.find(s => lowerInput.includes(s.name.toLowerCase()));
-    if (matchedService) {
-        return `Ah, **${matchedService.name}**! ✨<br>${matchedService.desc}<br><br>Check the <a href='services.html' style='color:#1565C0; font-weight:bold;'>Services</a> page!`;
-    }
+    sendBtn.onclick = processInput;
+    chatInput.onkeypress = (e) => { if (e.key === 'Enter') processInput(); };
 
-    if (lowerInput.includes('service') || lowerInput.includes('program')) {
-        return "We have lots of ways to help! Spiritual Care, Creative Healing... it's a winter wonderland of support! 🏔️ Which one interests you?";
-    }
+    function getOlafThinking(input) {
+        const q = input.toLowerCase();
 
-    // 5. Emotional Support
-    if (lowerInput.includes('sad') || lowerInput.includes('depressed') || lowerInput.includes('lonely') || lowerInput.includes('help') || lowerInput.includes('hurt')) {
-        return "Oh, don't feel blue like ice! 🧊 You matter so much! <br><br> Maybe visit our <a href='services.html' style='color:#1565C0; font-weight:bold;'>Recovery Room</a>? We're here to warm you up! 💙";
-    }
+        if (q.includes('hi') || q.includes('hello')) return "Hi there! I'm Olaf! ☃️ Did you bring a warm hug?";
+        if (q.includes('mission') || q.includes('why exist')) return olafBrain.context.mission;
+        if (q.includes('vision') || q.includes('goal')) return `My goal is to help everyone find wholeness! 💚 "${olafBrain.context.vision}"`;
+        if (q.includes('founder') || q.includes('ceo') || q.includes('john')) return olafBrain.context.leadership;
+        if (q.includes('service') || q.includes('program') || q.includes('help')) return "We offer Spiritual Care, Creative Healing, and a safe Recovery Room! You can see them all on our <a href='services.html' style='color:#00C853; font-weight:bold;'>Services</a> page! ✨";
+        if (q.includes('contact') || q.includes('whatsapp') || q.includes('message')) return `I can't wait to talk to you! You can message us on <a href='${olafBrain.context.whatsapp}' target='_blank' style='color:#00C853; font-weight:bold;'>WhatsApp</a> or email hello@hearthandheal.org! 📱`;
+        if (q.includes('hug')) return "I LOVE warm hugs! 🤗 *Squeeeeeeak* There you go!";
+        if (q.includes('summer')) return "I LOVE summer! ☀️ Bees'll buzz, kids'll blow dandelion fuzz... and I'll be doing whatever snow does in summer! 🏖️";
+        if (q.includes('sad') || q.includes('hurt') || q.includes('pain')) return "Oh, friend... I'm so sorry you're feeling this way. ❄️ Just remember, some people are worth melting for, and YOU are worth everything. Please check our <a href='services.html' style='color:#00C853; font-weight:bold;'>Recovery Room</a>, it's a safe place to heal. 💙";
+        if (q.includes('thank')) return "You're so welcome! My carrot nose is twitching with happiness! 🥕✨";
 
-    // 6. Contact
-    if (lowerInput.includes('contact') || lowerInput.includes('address') || lowerInput.includes('email')) {
-        return `Write to us at: <b>${knowledgeBase.contact.email}</b>.<br>Or visit: <b>${knowledgeBase.contact.address}</b>.`;
+        return "Oh flurry! ❄️ I'm not sure I understand, but I'm listening! Ask me about our mission, services, or if I like warm hugs!";
     }
-
-    // 7. General Greetings
-    if (lowerInput.includes('hi') || lowerInput.includes('hello')) {
-        return "Hello there! I'm Snowy! ❄️ Do you like summer too?";
-    }
-
-    return "Oh my flurry! ❄️ I'm not sure what that means. Im just a little snowman! Maybe check our <a href='services.html' style='color:#1565C0; font-weight:bold;'>Services</a> page?";
-}
 });
