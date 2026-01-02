@@ -1,8 +1,7 @@
 /**
- * Bank-style payment system (Node.js, Express)
- * Features: Secure invoice creation, payment orchestration, webhooks, reconciliation, logging
- * Security: Helmet, rate limiting, input validation, webhook signature verification, idempotency
- * Storage: In-memory Maps for demo (replace with DB: Postgres/MySQL)
+ * Hearth & Heal - Secure Backend
+ * Logic: Email verification signup, 2FA OTP login, M-Pesa payments
+ * Security: DB Persistence, Bcrypt Hashing, Rate Limiting, JWT Rotation, Helmet
  */
 
 require("dotenv").config();
@@ -16,6 +15,7 @@ const winston = require("winston");
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const db = require("./db");
 
 const app = express();
 
@@ -37,83 +37,42 @@ app.disable("x-powered-by");
 
 const limiter = rateLimit({
     windowMs: 10 * 60 * 1000,
-    max: 300, // tune per needs
+    max: 300,
     standardHeaders: true,
     legacyHeaders: false
 });
 app.use(limiter);
 
-/* ----------------------------- In-memory store --------------------------- */
-// Replace with DB tables: invoices, payments, transactions, receipts, audit_logs
-const store = {
-    invoices: new Map(),     // key: reference_number -> invoice object
-    payments: new Map(),     // key: payment_id -> payment attempt
-    transactions: new Map(), // key: txn_id -> transaction detail
-    receipts: new Map(),     // key: receipt_serial -> receipt detail
-    audit: [],               // append-only audit events
-    otps: new Map(),         // key: ref -> { otp, identifier, expiresAt }
-    users: new Map(),        // key: identifier -> { passwordHash, verified }
-    verifications: new Map() // key: ref -> { code, identifier, expiresAt }
-};
+/* ----------------------------- Database init --------------------------- */
+db.initDb()
+    .then(() => logger.info("Database initialized"))
+    .catch(err => logger.error("DB Init failed", err));
 
 /* ----------------------------- Helpers ---------------------------------- */
 const ENV = {
     PORT: process.env.PORT || 3000,
     BASE_URL: process.env.BASE_URL || "http://localhost:3000",
-    STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY || "",
-    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || "",
-    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || "",
-    MPESA_CONSUMER_KEY: process.env.MPESA_CONSUMER_KEY || "",
-    MPESA_CONSUMER_SECRET: process.env.MPESA_CONSUMER_SECRET || "",
-    MPESA_PASSKEY: process.env.MPESA_PASSKEY || "",
-    MPESA_SHORTCODE: process.env.MPESA_SHORTCODE || "",
-    MPESA_CALLBACK_URL: process.env.MPESA_CALLBACK_URL || "",
-    WEBHOOK_SHARED_SECRET: process.env.WEBHOOK_SHARED_SECRET || "change_me",
     EMAIL_USER: process.env.EMAIL_USER,
     EMAIL_PASS: process.env.EMAIL_PASS,
-    JWT_SECRET: process.env.JWT_SECRET || "default_h&h_secret_change_me",
-    OTP_EXPIRY_MS: 5 * 60 * 1000 // 5 minutes
+    JWT_SECRETS: (process.env.JWT_SECRET || "default_h&h_secret").split(","),
+    OTP_EXPIRY_MS: 5 * 60 * 1000,
+    WEBHOOK_SHARED_SECRET: process.env.WEBHOOK_SHARED_SECRET || "change_me"
 };
 
-function newRef() {
-    return "ECZ-" + Date.now() + "-" + Math.floor(Math.random() * 999999);
-}
 function now() { return new Date().toISOString(); }
 
 function audit(action, payload = {}) {
-    const event = { time: now(), action, payload };
-    store.audit.push(event);
-    logger.info({ audit: event });
+    logger.info({ audit: { time: now(), action, payload } });
 }
 
 function hmacSha256Hex(secret, payloadString) {
     return crypto.createHmac("sha256", secret).update(payloadString).digest("hex");
 }
 
-function isPositiveAmount(val) {
-    return typeof val === "number" && isFinite(val) && val > 0;
-}
-
-function issueReceipt(invoice) {
-    const serial = "R-" + Date.now() + "-" + Math.floor(Math.random() * 999999);
-    const receipt = {
-        serial,
-        invoice_ref: invoice.reference_number,
-        amount: invoice.amount,
-        currency: invoice.currency,
-        issued_at: now(),
-        customer_id: invoice.customer_id
-    };
-    store.receipts.set(serial, receipt);
-    return receipt;
-}
-
-// Generate OTP
 function generateOtp() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Send Generic Email
 async function sendEmail(email, subject, text) {
     if (!ENV.EMAIL_USER || !ENV.EMAIL_PASS) {
         logger.warn("Email credentials missing, skipping email send.");
@@ -121,375 +80,194 @@ async function sendEmail(email, subject, text) {
     }
     const transporter = nodemailer.createTransport({
         service: "gmail",
-        auth: {
-            user: ENV.EMAIL_USER,
-            pass: ENV.EMAIL_PASS
-        }
+        auth: { user: ENV.EMAIL_USER, pass: ENV.EMAIL_PASS }
     });
-
     await transporter.sendMail({
         from: `Hearth & Heal <${ENV.EMAIL_USER}>`,
-        to: email,
-        subject,
-        text
+        to: email, subject, text
     });
 }
 
-/* ----------------------------- Auth/OTP API ----------------------------- */
+function signJwt(payload) {
+    return jwt.sign(payload, ENV.JWT_SECRETS[0], { expiresIn: "2h" });
+}
 
-// STEP 1: Request Email Verification (Signup)
-app.post("/request-verification", async (req, res) => {
+function verifyJwt(token) {
+    for (const secret of ENV.JWT_SECRETS) {
+        try { return jwt.verify(token, secret); } catch (e) { continue; }
+    }
+    throw new Error("Invalid token");
+}
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: { error: "Too many attempts. Please try again later." }
+});
+
+/* ----------------------------- Auth API ----------------------------- */
+
+app.post("/request-verification", authLimiter, async (req, res) => {
     try {
         const { email } = req.body;
         if (!email) return res.status(400).json({ error: "Email required" });
 
         const code = generateOtp();
         const ref = crypto.randomUUID();
-        store.verifications.set(ref, { code, identifier: email, expiresAt: Date.now() + 10 * 60 * 1000 });
+        const codeHash = bcrypt.hashSync(code, 8);
 
-        await sendEmail(email, "Verify Your Hearth & Heal Email", `Your verification code is ${code}. It expires in 10 minutes.`);
+        await db.run(
+            `INSERT INTO verifications (ref, code_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`,
+            [ref, codeHash, email, Date.now() + 10 * 60 * 1000]
+        );
 
-        audit("VERIFICATION_REQUESTED", { ref, email });
-        res.json({ ref, message: "Verification code sent to your email" });
-    } catch (err) {
-        logger.error({ err });
-        res.status(500).json({ error: "Failed to send verification code" });
-    }
-});
-
-// STEP 2: Verify Email & Create Account
-app.post("/verify-email", (req, res) => {
-    try {
-        const { ref, code, password } = req.body;
-        const record = store.verifications.get(ref);
-        if (!record) return res.status(400).json({ error: "Invalid reference" });
-        if (Date.now() > record.expiresAt) {
-            store.verifications.delete(ref);
-            return res.status(400).json({ error: "Code expired" });
-        }
-        if (record.code !== code) return res.status(400).json({ error: "Invalid code" });
-
-        if (!password || password.length < 6) {
-            return res.status(400).json({ error: "Password must be at least 6 characters" });
-        }
-
-        const passwordHash = bcrypt.hashSync(password, 10);
-        store.users.set(record.identifier, { passwordHash, verified: true });
-        store.verifications.delete(ref);
-
-        audit("USER_REGISTERED", { identifier: record.identifier });
-        res.json({ success: true, message: "Email verified and account created successfully" });
+        await sendEmail(email, "Verify Your Email", `Your code is ${code}. It expires in 10 minutes.`);
+        res.json({ ref, message: "Verification code sent" });
     } catch (err) {
         logger.error({ err });
         res.status(500).json({ error: "Server error" });
     }
 });
 
-// STEP 3: Login with Password (triggers OTP)
-app.post("/login", async (req, res) => {
+app.post("/verify-email", authLimiter, async (req, res) => {
+    try {
+        const { ref, code, password } = req.body;
+        const records = await db.query(`SELECT * FROM verifications WHERE ref = ?`, [ref]);
+        const record = records[0];
+
+        if (!record || Date.now() > record.expires_at) return res.status(400).json({ error: "Invalid or expired code" });
+        if (!bcrypt.compareSync(code, record.code_hash)) return res.status(400).json({ error: "Invalid code" });
+
+        const passwordHash = bcrypt.hashSync(password, 10);
+        await db.run(
+            `INSERT INTO users (identifier, password_hash, verified) VALUES (?, ?, TRUE) 
+             ON CONFLICT(identifier) DO UPDATE SET password_hash = ?, verified = TRUE`,
+            [record.identifier, passwordHash, passwordHash]
+        );
+        await db.run(`DELETE FROM verifications WHERE ref = ?`, [ref]);
+
+        res.json({ success: true, message: "Account created" });
+    } catch (err) {
+        logger.error({ err });
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+app.post("/login", authLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = store.users.get(email);
+        const users = await db.query(`SELECT * FROM users WHERE identifier = ? AND verified = TRUE`, [email]);
+        const user = users[0];
 
-        if (!user || !user.verified) {
-            return res.status(400).json({ error: "Account not found or not verified" });
-        }
-
-        if (!bcrypt.compareSync(password, user.passwordHash)) {
+        if (!user || !bcrypt.compareSync(password, user.password_hash)) {
             return res.status(400).json({ error: "Invalid credentials" });
         }
 
-        // Correct Password -> Generate OTP
         const otp = generateOtp();
         const ref = crypto.randomUUID();
-        store.otps.set(ref, { otp, identifier: email, expiresAt: Date.now() + ENV.OTP_EXPIRY_MS });
+        const otpHash = bcrypt.hashSync(otp, 8);
 
-        await sendEmail(email, "Your Login OTP", `Your login OTP is ${otp}. It expires in 5 minutes.`);
+        await db.run(
+            `INSERT INTO otps (ref, otp_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`,
+            [ref, otpHash, email, Date.now() + ENV.OTP_EXPIRY_MS]
+        );
 
-        audit("LOGIN_OTP_SENT", { ref, email });
-        res.json({ ref, message: "OTP sent to your email for 2nd factor verification" });
+        await sendEmail(email, "Login OTP", `Your OTP is ${otp}. Expires in 5 minutes.`);
+        res.json({ ref, message: "OTP sent" });
     } catch (err) {
         logger.error({ err });
         res.status(500).json({ error: "Server error" });
     }
 });
 
-// STEP 4: Verify OTP & Issue Token
-app.post(["/auth/otp/verify", "/verify-otp"], (req, res) => {
+app.post(["/auth/otp/verify", "/verify-otp"], authLimiter, async (req, res) => {
     try {
         const { ref, otp } = req.body;
-        const record = store.otps.get(ref);
+        const records = await db.query(`SELECT * FROM otps WHERE ref = ?`, [ref]);
+        const record = records[0];
 
-        if (!record) return res.status(400).json({ error: "Invalid reference" });
-        if (Date.now() > record.expiresAt) {
-            store.otps.delete(ref);
-            return res.status(400).json({ error: "OTP expired" });
-        }
-        if (record.otp !== otp) return res.status(400).json({ error: "Invalid OTP" });
+        if (!record || Date.now() > record.expires_at) return res.status(400).json({ error: "Invalid or expired OTP" });
+        if (!bcrypt.compareSync(otp, record.otp_hash)) return res.status(400).json({ error: "Invalid OTP" });
 
-        store.otps.delete(ref);
-
-        // Issue JWT token
-        const token = jwt.sign({ email: record.identifier }, ENV.JWT_SECRET, { expiresIn: "2h" });
-
-        audit("LOGIN_SUCCESS", { identifier: record.identifier });
-        res.json({ success: true, token, user: { email: record.identifier, name: record.identifier.split('@')[0] } });
+        await db.run(`DELETE FROM otps WHERE ref = ?`, [ref]);
+        const token = signJwt({ email: record.identifier });
+        res.json({ success: true, token, user: { email: record.identifier } });
     } catch (err) {
         logger.error({ err });
         res.status(500).json({ error: "Server error" });
     }
 });
 
-// Legacy Request OTP (Purely for backward compatibility)
-app.post(["/auth/otp/request", "/request-otp"], async (req, res) => {
+app.post(["/auth/otp/request", "/request-otp"], authLimiter, async (req, res) => {
     try {
         const { email } = req.body;
-        if (!email) return res.status(400).json({ error: "Email required" });
-
         const otp = generateOtp();
         const ref = crypto.randomUUID();
-        store.otps.set(ref, { otp, identifier: email, expiresAt: Date.now() + ENV.OTP_EXPIRY_MS });
-
-        await sendEmail(email, "Your Hearth & Heal OTP", `Your OTP is ${otp}. It expires in 5 minutes.`);
-        return res.json({ ref, message: "OTP sent via email" });
-    } catch (err) {
-        logger.error({ err });
-        res.status(500).json({ error: "Failed to send OTP" });
-    }
+        const otpHash = bcrypt.hashSync(otp, 8);
+        await db.run(`INSERT INTO otps (ref, otp_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`, [ref, otpHash, email, Date.now() + ENV.OTP_EXPIRY_MS]);
+        await sendEmail(email, "Your OTP", `Your OTP is ${otp}`);
+        res.json({ ref, message: "OTP sent" });
+    } catch (err) { res.status(500).json({ error: "Failed" }); }
 });
 
-/* ----------------------------- Invoice API ------------------------------- */
-// Create invoice
-app.post("/invoices", (req, res) => {
+/* ----------------------------- Invoice & Payments ----------------------- */
+
+app.post("/invoices", async (req, res) => {
     try {
         const { customerId, amount, currency = "KES", description = "" } = req.body;
-        if (!customerId || !isPositiveAmount(amount)) {
-            return res.status(400).json({ error: "Invalid customerId or amount" });
-        }
-        const ref = newRef();
-        const invoice = {
-            id: crypto.randomUUID(),
-            reference_number: ref,
-            customer_id: String(customerId),
-            amount: Number(amount),
-            currency: String(currency).toUpperCase(),
-            description: String(description || ""),
-            status: "PENDING",
-            created_at: now(),
-            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-        };
-        store.invoices.set(ref, invoice);
-        audit("INVOICE_CREATED", { reference_number: ref, amount: amount, currency });
+        const ref = "ECZ-" + Date.now() + "-" + Math.floor(Math.random() * 9999);
+        const invoice = { reference_number: ref, id: crypto.randomUUID(), customer_id: customerId, amount, currency, status: "PENDING", created_at: now() };
+        await db.run(`INSERT INTO invoices (reference_number, id, customer_id, amount, currency, description, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [ref, invoice.id, customerId, amount, currency, description, "PENDING", invoice.created_at]);
         res.json(invoice);
-    } catch (err) {
-        logger.error({ err });
-        res.status(500).json({ error: "Server error" });
-    }
+    } catch (err) { res.status(500).json({ error: "Error" }); }
 });
 
-// Get invoice status
-app.get("/invoices/:ref", (req, res) => {
-    const invoice = store.invoices.get(req.params.ref);
-    if (!invoice) return res.status(404).json({ error: "Not found" });
-    res.json(invoice);
+app.get("/invoices/:ref", async (req, res) => {
+    const invs = await db.query(`SELECT * FROM invoices WHERE reference_number = ?`, [req.params.ref]);
+    invs[0] ? res.json(invs[0]) : res.status(404).json({ error: "Not found" });
 });
 
-/* ----------------------------- Payment Orchestration --------------------- */
-// Start payment attempt (channel: "card" | "bank" | "mpesa")
-app.post("/payments", (req, res) => {
+app.post("/payments", async (req, res) => {
     try {
         const { reference_number, channel } = req.body;
-        const invoice = store.invoices.get(reference_number);
-        if (!invoice) return res.status(404).json({ error: "Invoice not found" });
-        if (invoice.status !== "PENDING") {
-            return res.status(409).json({ error: "Invoice not payable" });
-        }
-        const paymentId = crypto.randomUUID();
-        const payment = {
-            id: paymentId,
-            invoice_id: invoice.id,
-            invoice_ref: reference_number,
-            channel,
-            status: "INITIATED",
-            initiated_at: now()
-        };
-        store.payments.set(paymentId, payment);
-        audit("PAYMENT_INITIATED", { payment_id: paymentId, channel, reference_number });
+        const invs = await db.query(`SELECT * FROM invoices WHERE reference_number = ?`, [reference_number]);
+        if (!invs[0] || invs[0].status !== "PENDING") return res.status(400).json({ error: "Invalid invoice" });
 
-        // Simulate channel routing:
-        if (channel === "card") {
-            // Redirect to your card gateway checkout (replace with real URL)
-            const checkoutUrl = `${ENV.BASE_URL}/demo/redirect?ref=${reference_number}&amount=${invoice.amount}`;
-            return res.json({ payment_id: paymentId, redirect_url: checkoutUrl });
-        } else if (channel === "mpesa") {
-            // STK Push trigger (stub)
-            // For this demo, we auto-mark as PAID after 10 seconds to simulate user completing payment
-            setTimeout(() => {
-                if (invoice.status === "PENDING") {
-                    invoice.status = "PAID";
-                    invoice.paid_at = now();
-                    const receipt = issueReceipt(invoice);
-                    audit("AUTO_PAID_SIMULATION", { reference_number, receipt_serial: receipt.serial });
-                }
-            }, 10000);
-
-            return res.json({
-                payment_id: paymentId,
-                message: "M-Pesa STK Push initiated. Check your phone to approve.",
-                invoice_ref: reference_number
-            });
-        } else if (channel === "bank") {
-            // Bank/virtual account flow (stub)
-            const virtualAccount = "VA-" + Math.floor(Math.random() * 999999);
-            return res.json({
-                payment_id: paymentId,
-                message: "Use the virtual account/reference to pay via bank transfer.",
-                virtual_account: virtualAccount,
-                amount: invoice.amount,
-                reference_number
-            });
-        } else {
-            return res.status(400).json({ error: "Unsupported channel" });
+        if (channel === "mpesa") {
+            setTimeout(async () => {
+                await db.run(`UPDATE invoices SET status = 'PAID', paid_at = ? WHERE reference_number = ?`, [now(), reference_number]);
+            }, 5000);
+            return res.json({ message: "STK Push simulated" });
         }
-    } catch (err) {
-        logger.error({ err });
-        res.status(500).json({ error: "Server error" });
-    }
+        res.json({ message: "Initiated" });
+    } catch (err) { res.status(500).json({ error: "Error" }); }
 });
 
 /* ----------------------------- Webhooks --------------------------------- */
-/**
- * Card/Bank-like webhook:
- * - Expects body: { reference_number, status: "SUCCESS"|"FAILED", provider_txn_id, amount }
- * - Validates HMAC signature in header: x-signature = HMAC_SHA256(secret, JSON.stringify(body))
- * - Idempotent: only mark paid once
- */
-app.post("/webhooks/bank", (req, res) => {
-    try {
-        const sig = req.headers["x-signature"];
-        const payloadStr = JSON.stringify(req.body);
-        const expected = hmacSha256Hex(ENV.WEBHOOK_SHARED_SECRET, payloadStr);
-        if (sig !== expected) {
-            audit("WEBHOOK_REJECTED", { reason: "invalid_signature" });
-            return res.status(401).json({ error: "Invalid signature" });
-        }
 
-        const { reference_number, status, provider_txn_id, amount } = req.body;
-        const invoice = store.invoices.get(reference_number);
-        if (!invoice) return res.status(404).end();
+app.post("/webhooks/bank", async (req, res) => {
+    const sig = req.headers["x-signature"];
+    const expected = hmacSha256Hex(ENV.WEBHOOK_SHARED_SECRET, JSON.stringify(req.body));
+    if (sig !== expected) return res.status(401).end();
 
-        audit("WEBHOOK_RECEIVED", { channel: "bank", reference_number, status });
-
-        if (status === "SUCCESS" && invoice.status !== "PAID") {
-            // Basic amount check
-            if (Number(amount) !== Number(invoice.amount)) {
-                audit("AMOUNT_MISMATCH", { reference_number, expected: invoice.amount, got: amount });
-                // Depending on policy, mark as REVIEW or reject
-            }
-            invoice.status = "PAID";
-            invoice.paid_at = now();
-            const receipt = issueReceipt(invoice);
-            audit("RECEIPT_ISSUED", { receipt_serial: receipt.serial, reference_number });
-        } else if (status === "FAILED") {
-            invoice.status = "FAILED";
-        }
-
-        res.status(200).end();
-    } catch (err) {
-        logger.error({ err });
-        res.status(500).end();
+    const { reference_number, status } = req.body;
+    if (status === "SUCCESS") {
+        await db.run(`UPDATE invoices SET status = 'PAID', paid_at = ? WHERE reference_number = ?`, [now(), reference_number]);
     }
+    res.end();
 });
 
-/**
- * M-Pesa webhook (Daraja STK callback format varies; this is a simplified handler)
- * In production: validate origin/signature per provider docs.
- */
-app.post("/webhooks/mpesa", (req, res) => {
-    try {
-        // Assume payload: { Body: { stkCallback: { ResultCode, CallbackMetadata: { Item: [{Name, Value}...] } } } }
-        const body = req.body?.Body?.stkCallback;
-        audit("WEBHOOK_RECEIVED", { channel: "mpesa", raw: !!body });
-
-        if (!body) return res.status(400).end();
-
-        const resultCode = body.ResultCode;
-        const items = body.CallbackMetadata?.Item || [];
-        const refItem = items.find(i => i.Name === "AccountReference");
-        const amountItem = items.find(i => i.Name === "Amount");
-        const ref = refItem?.Value;
-        const amount = amountItem?.Value;
-
-        const invoice = store.invoices.get(ref);
-        if (!invoice) return res.status(404).end();
-
-        if (resultCode === 0 && invoice.status !== "PAID") {
-            invoice.status = "PAID";
-            invoice.paid_at = now();
-            const receipt = issueReceipt(invoice);
-            audit("RECEIPT_ISSUED", { receipt_serial: receipt.serial, reference_number: ref, amount });
-        } else if (resultCode !== 0) {
-            invoice.status = "FAILED";
-        }
-
-        res.status(200).end();
-    } catch (err) {
-        logger.error({ err });
-        res.status(500).end();
-    }
+app.post("/webhooks/mpesa", async (req, res) => {
+    const ref = req.body?.Body?.stkCallback?.CallbackMetadata?.Item?.find(i => i.Name === "AccountReference")?.Value;
+    if (ref) await db.run(`UPDATE invoices SET status = 'PAID', paid_at = ? WHERE reference_number = ?`, [now(), ref]);
+    res.end();
 });
 
-/* ----------------------------- Receipts & Status ------------------------- */
-app.get("/receipts/:serial", (req, res) => {
-    const receipt = store.receipts.get(req.params.serial);
-    if (!receipt) return res.status(404).json({ error: "Not found" });
-    res.json(receipt);
-});
+/* ----------------------------- Error & Init ------------------------------ */
 
-/* ----------------------------- Reconciliation Job ----------------------- */
-/**
- * Nightly reconciliation:
- * - Pull settlement reports from providers (stubbed)
- * - Cross-check invoices marked PAID against settlement lines
- * - Flag mismatches for manual review
- */
-cron.schedule("0 2 * * *", async () => {
-    try {
-        audit("RECONCILIATION_START", {});
-        // Stub: simulate settlement data
-        const settlementRefs = Array.from(store.invoices.values())
-            .filter(inv => inv.status === "PAID")
-            .map(inv => inv.reference_number);
-
-        // Check each paid invoice is present in settlement
-        for (const inv of store.invoices.values()) {
-            if (inv.status === "PAID") {
-                const found = settlementRefs.includes(inv.reference_number);
-                if (!found) {
-                    audit("RECON_FLAG_MISSING", { reference_number: inv.reference_number });
-                }
-            }
-        }
-        audit("RECONCILIATION_COMPLETE", {});
-    } catch (err) {
-        logger.error({ err });
-        audit("RECONCILIATION_ERROR", { error: String(err) });
-    }
-});
-
-/* ----------------------------- Demo endpoints ---------------------------- */
-// Simple demo redirect landing
-app.get("/demo/redirect", (req, res) => {
-    res.send("Demo checkout landing. In production, redirect to your gateway UI.");
-});
-
-/* ----------------------------- Error handling ---------------------------- */
 app.use((err, req, res, next) => {
     logger.error({ err });
     res.status(500).json({ error: "Unexpected error" });
 });
 
-/* ----------------------------- Start server ------------------------------ */
-app.listen(ENV.PORT, () => {
-    logger.info({ msg: `Server running on port ${ENV.PORT}` });
-});
+app.listen(ENV.PORT, () => logger.info({ msg: `Server running on port ${ENV.PORT}` }));
