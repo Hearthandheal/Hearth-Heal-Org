@@ -28,6 +28,13 @@ const TeamManager = {
             role: 'Program Coordinator',
             bio: 'Passionate about organizing impactful community events that bring people together for healing.',
             image: ''
+        },
+        {
+            id: '4',
+            name: 'Emmanuel K. Letoiya',
+            role: 'External Marketing',
+            bio: 'Builds partnerships and expands our reach beyond the immediate community.',
+            image: 'assets/emmanuel_k_letoiya.jpg'
         }
     ],
 
