@@ -212,20 +212,21 @@ const Auth = {
         }
     },
 
-    /**
-     * Request OTP
-     * @param {string} identifier 
-     * @param {string} type 'email' or 'phone'
-     */
     requestOTP: async (identifier, type) => {
         try {
+            const body = type === 'email' ? { email: identifier } : { phone: identifier };
             const response = await fetch('https://hearth-heal-org.onrender.com/auth/otp/request', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ identifier, type })
+                body: JSON.stringify(body)
             });
             const data = await response.json();
-            if (response.ok) return { success: true };
+            if (response.ok) {
+                // Save reference for verification
+                Auth._currentOtpRef = data.ref;
+                Auth._currentIdentifier = identifier;
+                return { success: true, channel: data.channel };
+            }
             return { success: false, message: data.error || 'Failed to send OTP' };
         } catch (error) {
             console.error(error);
@@ -233,23 +234,26 @@ const Auth = {
         }
     },
 
-    /**
-     * Verify OTP
-     * @param {string} identifier 
-     * @param {string} code 
-     */
     verifyOTP: async (identifier, code) => {
         try {
+            const ref = Auth._currentOtpRef;
+            if (!ref) return { success: false, message: 'OTP Reference missing. Please request again.' };
+
             const response = await fetch('https://hearth-heal-org.onrender.com/auth/otp/verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ identifier, code })
+                body: JSON.stringify({ ref, otp: code })
             });
             const data = await response.json();
 
             if (response.ok && data.success) {
                 // Log user in
-                Auth.setCurrentUser({ email: identifier, name: data.user.name, bio: '' });
+                const userIdentifier = data.user.identifier || identifier;
+                Auth.setCurrentUser({
+                    email: userIdentifier,
+                    name: userIdentifier.split('@')[0],
+                    bio: ''
+                });
                 return { success: true };
             }
             return { success: false, message: data.error || 'Verification failed' };

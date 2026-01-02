@@ -13,6 +13,7 @@ const cors = require("cors");
 const crypto = require("crypto");
 const cron = require("node-cron");
 const winston = require("winston");
+const nodemailer = require("nodemailer");
 
 const app = express();
 
@@ -64,6 +65,8 @@ const ENV = {
     MPESA_SHORTCODE: process.env.MPESA_SHORTCODE || "",
     MPESA_CALLBACK_URL: process.env.MPESA_CALLBACK_URL || "",
     WEBHOOK_SHARED_SECRET: process.env.WEBHOOK_SHARED_SECRET || "change_me",
+    EMAIL_USER: process.env.EMAIL_USER,
+    EMAIL_PASS: process.env.EMAIL_PASS,
     OTP_EXPIRY_MS: 5 * 60 * 1000 // 5 minutes
 };
 
@@ -100,58 +103,94 @@ function issueReceipt(invoice) {
     return receipt;
 }
 
+// Generate OTP
+function generateOtp() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Send OTP via Email
+async function sendOtpEmail(email, otp) {
+    if (!ENV.EMAIL_USER || !ENV.EMAIL_PASS) {
+        logger.warn("Email credentials missing, skipping email send.");
+        return;
+    }
+    const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+            user: ENV.EMAIL_USER,
+            pass: ENV.EMAIL_PASS
+        }
+    });
+
+    await transporter.sendMail({
+        from: `Hearth & Heal <${ENV.EMAIL_USER}>`,
+        to: email,
+        subject: "Your OTP Code",
+        text: `Your OTP is ${otp}. It expires in 5 minutes.`
+    });
+}
+
 /* ----------------------------- Auth/OTP API ----------------------------- */
 
 // Request OTP
-app.post("/auth/otp/request", (req, res) => {
+app.post("/auth/otp/request", async (req, res) => {
     try {
-        const { identifier, type } = req.body; // type: 'email' | 'phone'
-        if (!identifier || !type) return res.status(400).json({ error: "Missing identifier or type" });
+        const { phone, email } = req.body;
+        if (!phone && !email) return res.status(400).json({ error: "Phone or email required" });
 
-        // Generate 6-digit code
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiresAt = Date.now() + ENV.OTP_EXPIRY_MS;
+        const otp = generateOtp();
+        const ref = crypto.randomUUID();
 
-        store.otps.set(identifier, { code, expiresAt });
+        store.otps.set(ref, { otp, identifier: phone || email, expiresAt: Date.now() + ENV.OTP_EXPIRY_MS });
 
-        // In production, send via Email (e.g. SendGrid) or SMS (e.g. Twilio/Infobip)
-        // For demo/dev, we log it to console.
-        logger.info({ msg: "OTP GENERATED", identifier, code });
-        console.log(`[MOCK OTP] Sent to ${identifier}: ${code}`);
+        // Simulate SMS send behavior
+        try {
+            const smsSuccess = Math.random() > 0.3; // simulate 70% success
+            if (!smsSuccess && email) {
+                await sendOtpEmail(email, otp);
+                audit("OTP_SENT_EMAIL", { ref, email });
+                return res.json({ ref, channel: "email", message: "OTP sent via email" });
+            }
 
-        audit("OTP_REQUESTED", { identifier, type });
-        res.json({ message: "OTP sent successfully" });
+            // Mock SMS
+            logger.info({ msg: "OTP SMS MOCK", ref, phone, otp });
+            console.log(`[MOCK OTP SMS] Sent to ${phone}: ${otp}`);
+            audit("OTP_SENT_SMS", { ref, phone });
+
+            return res.json({ ref, channel: "sms", message: "OTP sent via SMS" });
+        } catch (err) {
+            if (email) {
+                await sendOtpEmail(email, otp);
+                audit("OTP_SENT_EMAIL_FALLBACK", { ref, email });
+                return res.json({ ref, channel: "email", message: "OTP sent via email (fallback)" });
+            }
+            throw err;
+        }
     } catch (err) {
         logger.error({ err });
-        res.status(500).json({ error: "Server error" });
+        res.status(500).json({ error: "Failed to send OTP" });
     }
 });
 
 // Verify OTP
 app.post("/auth/otp/verify", (req, res) => {
     try {
-        const { identifier, code } = req.body;
-        if (!identifier || !code) return res.status(400).json({ error: "Missing identifier or code" });
+        const { ref, otp } = req.body;
+        if (!ref || !otp) return res.status(400).json({ error: "Missing ref or otp" });
 
-        const record = store.otps.get(identifier);
-        if (!record) return res.status(400).json({ error: "Invalid or expired OTP" });
-
+        const record = store.otps.get(ref);
+        if (!record) return res.status(400).json({ error: "Invalid reference" });
         if (Date.now() > record.expiresAt) {
-            store.otps.delete(identifier);
+            store.otps.delete(ref);
             return res.status(400).json({ error: "OTP expired" });
         }
-
-        if (record.code !== code) {
-            return res.status(400).json({ error: "Invalid code" });
+        if (record.otp !== otp) {
+            return res.status(400).json({ error: "Invalid OTP" });
         }
 
-        // Success
-        store.otps.delete(identifier); // consume OTP
-        audit("OTP_VERIFIED", { identifier });
-
-        // Return a session token or user object (Mock)
-        res.json({ success: true, user: { identifier, name: identifier.split('@')[0] || identifier } });
-
+        store.otps.delete(ref);
+        audit("OTP_VERIFIED", { identifier: record.identifier });
+        res.json({ success: true, message: "OTP verified successfully", user: { identifier: record.identifier } });
     } catch (err) {
         logger.error({ err });
         res.status(500).json({ error: "Server error" });

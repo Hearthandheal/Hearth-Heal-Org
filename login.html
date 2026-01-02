@@ -217,7 +217,7 @@
                 errorDiv.style.display = 'none';
                 document.getElementById('otp-verify-section').style.display = 'block';
                 document.getElementById('btn-send-otp').style.display = 'none';
-                alert("OTP Sent! Check your console (simulation) or SMS.");
+                alert(`OTP Sent! Check your ${res.channel === 'email' ? 'Email' : 'Phone (SMS)'} for the code.`);
             } else {
                 errorDiv.innerText = res.message;
                 errorDiv.style.display = 'block';
