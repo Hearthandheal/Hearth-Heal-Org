@@ -75,17 +75,25 @@ function generateOtp() {
 
 async function sendEmail(email, subject, text) {
     if (!ENV.EMAIL_USER || !ENV.EMAIL_PASS) {
-        logger.warn("Email credentials missing, skipping email send.");
+        logger.warn("Email simulation mode active (credentials missing)", { to: email, subject, text });
+        // In simulation mode, we log the OTP/code so it can be seen in server logs
+        console.log(`\n--- [EMAIL SIMULATION] ---\nTo: ${email}\nSubject: ${subject}\nBody: ${text}\n--------------------------\n`);
         return;
     }
-    const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: { user: ENV.EMAIL_USER, pass: ENV.EMAIL_PASS }
-    });
-    await transporter.sendMail({
-        from: `Hearth & Heal <${ENV.EMAIL_USER}>`,
-        to: email, subject, text
-    });
+    try {
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: { user: ENV.EMAIL_USER, pass: ENV.EMAIL_PASS }
+        });
+        await transporter.sendMail({
+            from: `Hearth & Heal <${ENV.EMAIL_USER}>`,
+            to: email, subject, text
+        });
+        logger.info("Email sent successfully", { to: email, subject });
+    } catch (err) {
+        logger.error("Email send failed", { error: err.message, to: email });
+        throw new Error("Email service failed. Please contact support.");
+    }
 }
 
 function signJwt(payload) {
