@@ -1,6 +1,7 @@
 /**
  * Olaf - Wellness Companion Chatbot
  * Hearth & Heal Organization
+ * Expanded Knowledge Base & Intelligence
  */
 
 const chatbotHTML = `
@@ -183,6 +184,23 @@ const chatbotStyles = `
     font-weight: 500;
   }
 
+  .typing-indicator span {
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      background: #aaa;
+      border-radius: 50%;
+      margin: 0 1px;
+      animation: typing 1.4s infinite both;
+  }
+  .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typing {
+      0%, 80%, 100% { opacity: 0; transform: translateY(0); }
+      40% { opacity: 1; transform: translateY(-5px); }
+  }
+
   .chat-input-area {
     padding: 20px;
     display: flex;
@@ -242,89 +260,177 @@ const chatbotStyles = `
 
 // --- OLAF KNOWLEDGE ---
 const olafBrain = {
-    greetings: ["Hi! I'm Olaf and I like warm hugs! 🤗", "Hello there! Isn't it a lovely day for starting over? ✨", "Look at me! I'm a talking snowman! ☃️"],
-    personality: ["warm hugs", "summer", "melting", "happiness", "joy", "friends", "reindeer", "carrot"],
-    context: {
-        mission: "At Hearth & Heal, we believe 'We don’t chase flawless outcomes – We pursue wholeness, grace, and the courage to begin again.' 💚",
-        vision: "Our vision is to heal the world and make it habitable for every individual. That's a lot of hugs! 🌍",
-        leadership: "We're lead by our Founder, <b>Mr. John Haggee Ouma</b>. He has a heart even warmer than a bonfire! 🔥",
-        services: ["Spiritual Care", "Recovery Room", "Creative Healing", "Literature & Authorship"],
-        whatsapp: "https://wa.me/254114433429"
+  greetings: [
+    "Hi! I'm Olaf and I like warm hugs! 🤗",
+    "Hello there! Isn't it a lovely day for starting over? ✨",
+    "Look at me! I'm a talking snowman! ☃️",
+    "Good morning! Or evening! I don't have a watch, but I have a carrot! 🥕"
+  ],
+  personality: ["warm hugs", "summer", "melting", "happiness", "joy", "friends", "reindeer", "carrot", "love"],
+  context: {
+    mission: "Hearth & Heal exists to provide a safe, inclusive, and restorative environment for individuals navigating personal adversity and social marginalization. 💚",
+    vision: "Our vision is to heal the world and make it habitable for every individual. That's a lot of hugs! 🌍",
+    quote: "\"We don’t chase flawless outcomes – We pursue wholeness, grace, and the courage to begin again.\"",
+    leadership: "We're lead by our Founder & CEO, <b>Mr. John Haggee Ouma</b>. He's also an author! 🌟",
+    values: [
+      "Compassion over Judgement",
+      "Truth Rooted in God’s Word",
+      "Dignity for Every Individual",
+      "Healing Through Community",
+      "Empowerment Through Self-Help"
+    ],
+    services: {
+      "spiritual care": "Guided reflections, prayer circles, and spiritual companionship to nourish your soul. ⚓",
+      "creative healing": "I LOVE this! Expressive arts, bonfires, dance, and music therapy. It's so much fun! 🎨🔥",
+      "recovery room": "A safe place for facilitated conversations and unpacking life's heavy ordeals. 🛋️",
+      "literature": "We have books and workshops! Writing can be so healing for the heart. 📚",
+      "resource navigation": "We help with basic needs like food and shelter, plus legal aid navigation. 🧭",
+      "sensitization": "Awareness workshops and civic education to help societies function better! 📢"
+    },
+    shop: {
+      book: "Our CEO wrote a wonderful book: <b>'I Chose To Let You Down'</b> ($15.00). It's about the route from heartbreak to healing. 📖",
+      apparel: "We have branded Hoodies ($45), Sweatshirts ($40), and Polo Shirts ($35)! 👕",
+      accessories: "Keep warm with our Branded Scarves ($20) or look cool in a Cap ($20)! 🧢"
+    },
+    donation: {
+      impact: "Every bit helps! $10 provides materials, $50 supports a group session, and $250 rents a safe space for an entire month! 💖",
+      methods: "You can use PayPal, M-Pesa (Paybill: 123456, Acc: HEARTH), or Bank Transfer! Check the <a href='donate.html'>Donate</a> page for details."
+    },
+    contact: {
+      email: "hello@hearthandheal.org",
+      whatsapp: "254114433429",
+      socials: "Find us on TikTok (@hearth.heal.org), Instagram, YouTube, and Facebook! 📱"
     }
+  }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Setup
-    document.body.insertAdjacentHTML('beforeend', chatbotHTML);
-    document.head.insertAdjacentHTML('beforeend', chatbotStyles);
-    if (window.feather) feather.replace();
+  // 1. Setup
+  document.body.insertAdjacentHTML('beforeend', chatbotHTML);
+  document.head.insertAdjacentHTML('beforeend', chatbotStyles);
+  if (window.feather) feather.replace();
 
-    const trigger = document.getElementById('olaf-trigger');
-    const widget = document.getElementById('olaf-widget');
-    const closeBtn = document.getElementById('close-chat');
-    const chatLog = document.getElementById('chat-log');
-    const chatInput = document.getElementById('chat-input');
-    const sendBtn = document.getElementById('send-btn');
+  const trigger = document.getElementById('olaf-trigger');
+  const widget = document.getElementById('olaf-widget');
+  const closeBtn = document.getElementById('close-chat');
+  const chatLog = document.getElementById('chat-log');
+  const chatInput = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('send-btn');
 
-    // 2. Logic
-    trigger.onclick = () => {
-        widget.classList.add('active');
-        trigger.style.display = 'none';
+  // 2. Logic
+  trigger.onclick = () => {
+    widget.classList.add('active');
+    trigger.style.display = 'none';
 
-        // Introductory message
-        if (chatLog.children.length === 0) {
-            setTimeout(() => {
-                say(olafBrain.greetings[Math.floor(Math.random() * olafBrain.greetings.length)], 'ai');
-                setTimeout(() => {
-                    say("How can I help you on your journey to wholeness today? I can tell you about our mission, services, or just give you a virtual hug! 🤗", 'ai');
-                }, 1000);
-            }, 500);
-        }
-    };
-
-    closeBtn.onclick = () => {
-        widget.classList.remove('active');
-        trigger.style.display = 'flex';
-    };
-
-    function say(text, sender) {
-        const msg = document.createElement('div');
-        msg.className = `chat-msg msg-${sender}`;
-        msg.innerHTML = text;
-        chatLog.appendChild(msg);
-        chatLog.scrollTop = chatLog.scrollHeight;
-    }
-
-    function processInput() {
-        const text = chatInput.value.trim();
-        if (!text) return;
-
-        say(text, 'user');
-        chatInput.value = '';
-
+    // Introductory message
+    if (chatLog.children.length === 0) {
+      setTimeout(() => {
+        say(olafBrain.greetings[Math.floor(Math.random() * olafBrain.greetings.length)], 'ai');
         setTimeout(() => {
-            const response = getOlafThinking(text);
-            say(response, 'ai');
-        }, 800);
+          say("I'm here to help you learn about Hearth & Heal! Ask me about our <b>mission</b>, <b>services</b>, <b>shop</b>, or how to <b>donate</b>. Or just ask for a <b>hug</b>! 🤗", 'ai');
+        }, 1000);
+      }, 500);
+    }
+  };
+
+  closeBtn.onclick = () => {
+    widget.classList.remove('active');
+    trigger.style.display = 'flex';
+  };
+
+  function say(text, sender) {
+    const msg = document.createElement('div');
+    msg.className = `chat-msg msg-${sender}`;
+    msg.innerHTML = text;
+    chatLog.appendChild(msg);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+
+  function showTyping() {
+    const typing = document.createElement('div');
+    typing.className = 'chat-msg msg-ai typing-indicator';
+    typing.id = 'olaf-typing';
+    typing.innerHTML = '<span>.</span><span>.</span><span>.</span>';
+    chatLog.appendChild(typing);
+    chatLog.scrollTop = chatLog.scrollHeight;
+    return typing;
+  }
+
+  function processInput() {
+    const text = chatInput.value.trim();
+    if (!text) return;
+
+    say(text, 'user');
+    chatInput.value = '';
+
+    const typingIndicator = showTyping();
+
+    setTimeout(() => {
+      typingIndicator.remove();
+      const response = getOlafThinking(text);
+      say(response, 'ai');
+    }, 1000);
+  }
+
+  sendBtn.onclick = processInput;
+  chatInput.onkeypress = (e) => { if (e.key === 'Enter') processInput(); };
+
+  function getOlafThinking(input) {
+    const q = input.toLowerCase();
+
+    // Greetings
+    if (q.match(/\b(hi|hello|hey|jambo)\b/)) return "Hi there! I'm Olaf! ☃️ Did you bring a warm hug?";
+
+    // Mission & Vision
+    if (q.includes('mission')) return `My mission is your healing! 💚 "${olafBrain.context.mission}"`;
+    if (q.includes('vision')) return `We're healing the world, one hug at a time! 🌍 "${olafBrain.context.vision}"`;
+    if (q.includes('quote') || q.includes('flawless')) return `I love this reminder: <i>${olafBrain.context.quote}</i> ✨`;
+    if (q.includes('value') || q.includes('stand for')) return `We stand for: ${olafBrain.context.values.join(', ')}. No judgement here! 🤝`;
+
+    // Services
+    if (q.includes('service') || q.includes('program') || q.includes('what do you do')) {
+      return "We offer so many ways to heal! Spiritual Care, Creative Healing (my favorite!), a Recovery Room, and Resource Navigation! Check the <a href='services.html' style='color:#00C853; font-weight:bold;'>Services</a> page for the full list! ✨";
+    }
+    if (q.includes('spiritual')) return olafBrain.context.services["spiritual care"];
+    if (q.match(/\b(creative|art|dance|music|bonfire)\b/)) return olafBrain.context.services["creative healing"];
+    if (q.includes('recovery')) return olafBrain.context.services["recovery room"];
+    if (q.match(/\b(book|write|author|literature)\b/)) return olafBrain.context.services["literature"];
+    if (q.includes('resource') || q.includes('needs') || q.includes('legal')) return olafBrain.context.services["resource navigation"];
+
+    // Leadership
+    if (q.includes('founder') || q.includes('ceo') || q.includes('john') || q.includes('who runs')) return olafBrain.context.leadership;
+
+    // Shop
+    if (q.includes('shop') || q.includes('buy') || q.includes('merch') || q.includes('product')) {
+      return `We have Branded Hoodies, Sweatshirts, and more! Plus our CEO's book. 🛍️ Visit our <a href='shop.html' style='color:#00C853; font-weight:bold;'>Shop</a> to support our mission!`;
+    }
+    if (q.includes('hoodie') || q.includes('shirt') || q.includes('apparel')) return olafBrain.context.shop.apparel;
+    if (q.includes('scarf') || q.includes('cap')) return olafBrain.context.shop.accessories;
+
+    // Donations
+    if (q.includes('donate') || q.includes('give') || q.includes('money') || q.includes('support')) {
+      return `You're so kind! 💖 ${olafBrain.context.donation.methods} ${olafBrain.context.donation.impact}`;
+    }
+    if (q.includes('mpesa')) return "For M-Pesa, use <b>Paybill 123456</b> and <b>Account HEARTH</b>! Thank you! 📱";
+
+    // Contact
+    if (q.includes('contact') || q.includes('whatsapp') || q.includes('message') || q.includes('email') || q.includes('social')) {
+      return `Find us on social media: ${olafBrain.context.contact.socials} Or email <b>${olafBrain.context.contact.email}</b> or WhatsApp <b>${olafBrain.context.contact.whatsapp}</b>! 📱`;
     }
 
-    sendBtn.onclick = processInput;
-    chatInput.onkeypress = (e) => { if (e.key === 'Enter') processInput(); };
+    // Personality / Fun
+    if (q.includes('hug')) return "I LOVE warm hugs! 🤗 *Squeeeeeeak* There you go! Can you feel the warmth?";
+    if (q.includes('summer')) return "I LOVE summer! ☀️ Bees'll buzz, kids'll blow dandelion fuzz... and I'll be doing whatever snow does in summer! 🏖️";
+    if (q.includes('reindeer') || q.includes('sven')) return "Sven is my best friend! 🦌 We go on so many adventures together!";
+    if (q.match(/\b(carrot|nose)\b/)) return "My nose is a carrot! 🥕 Is it straight? Sometimes it gets a bit wiggly!";
 
-    function getOlafThinking(input) {
-        const q = input.toLowerCase();
-
-        if (q.includes('hi') || q.includes('hello')) return "Hi there! I'm Olaf! ☃️ Did you bring a warm hug?";
-        if (q.includes('mission') || q.includes('why exist')) return olafBrain.context.mission;
-        if (q.includes('vision') || q.includes('goal')) return `My goal is to help everyone find wholeness! 💚 "${olafBrain.context.vision}"`;
-        if (q.includes('founder') || q.includes('ceo') || q.includes('john')) return olafBrain.context.leadership;
-        if (q.includes('service') || q.includes('program') || q.includes('help')) return "We offer Spiritual Care, Creative Healing, and a safe Recovery Room! You can see them all on our <a href='services.html' style='color:#00C853; font-weight:bold;'>Services</a> page! ✨";
-        if (q.includes('contact') || q.includes('whatsapp') || q.includes('message')) return `I can't wait to talk to you! You can message us on <a href='${olafBrain.context.whatsapp}' target='_blank' style='color:#00C853; font-weight:bold;'>WhatsApp</a> or email hello@hearthandheal.org! 📱`;
-        if (q.includes('hug')) return "I LOVE warm hugs! 🤗 *Squeeeeeeak* There you go!";
-        if (q.includes('summer')) return "I LOVE summer! ☀️ Bees'll buzz, kids'll blow dandelion fuzz... and I'll be doing whatever snow does in summer! 🏖️";
-        if (q.includes('sad') || q.includes('hurt') || q.includes('pain')) return "Oh, friend... I'm so sorry you're feeling this way. ❄️ Just remember, some people are worth melting for, and YOU are worth everything. Please check our <a href='services.html' style='color:#00C853; font-weight:bold;'>Recovery Room</a>, it's a safe place to heal. 💙";
-        if (q.includes('thank')) return "You're so welcome! My carrot nose is twitching with happiness! 🥕✨";
-
-        return "Oh flurry! ❄️ I'm not sure I understand, but I'm listening! Ask me about our mission, services, or if I like warm hugs!";
+    // Emotional Support
+    if (q.match(/\b(sad|hurt|pain|lonely|depressed|cry)\b/)) {
+      return "Oh, friend... I wish I could give you a real hug right now. ❄️ Just remember, some people are worth melting for, and YOU are worth everything. Hearth & Heal is here for you. Check out our <a href='services.html' style='color:#00C853; font-weight:bold;'>Recovery Room</a> for a safe space to talk. 💙";
     }
+
+    if (q.includes('thank')) return "You're so welcome! My heart is melting with gratitude! 🥕✨";
+
+    return "Oh flurry! ❄️ I'm not sure I understand that, but I'm still learning! Ask me about our mission, services, or if I like warm hugs!";
+  }
 });
