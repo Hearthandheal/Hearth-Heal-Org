@@ -35,6 +35,13 @@ const TeamManager = {
             role: 'External Marketing',
             bio: 'Builds partnerships and expands our reach beyond the immediate community.',
             image: 'assets/emmanuel_k_letoiya.jpg'
+        },
+        {
+            id: '5',
+            name: 'Angela Elijah',
+            role: 'Events Manager',
+            bio: 'Orchestrates our community gatherings and wellness workshops.',
+            image: 'assets/angela_elijah.jpg'
         }
     ],
 
