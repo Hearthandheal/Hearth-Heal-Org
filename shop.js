@@ -195,7 +195,19 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
 
 
-        // Handle Modal "Add to Cart & Checkout" click
+        // Handle Modal Add to Cart
+        const modalAddCartBtn = document.getElementById('modal-add-cart-btn');
+        if (modalAddCartBtn) {
+            modalAddCartBtn.addEventListener('click', () => {
+                const qty = qtyInput.value;
+                const size = sizeSelect ? sizeSelect.value : 'M';
+                const color = (colorGroup && colorGroup.style.display !== 'none') ? colorSelect.value : '';
+                addToCart({ ...currentProductData, qty, size, color });
+                modal.classList.remove('active');
+            });
+        }
+
+        // Handle Modal Instant WhatsApp Order
         if (modalWhatsappBtn) {
             modalWhatsappBtn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -203,16 +215,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const size = sizeSelect ? sizeSelect.value : 'M';
                 const color = (colorGroup && colorGroup.style.display !== 'none') ? colorSelect.value : '';
 
-                const item = {
-                    ...currentProductData,
-                    qty,
-                    size,
-                    color
-                };
+                let msg = `🛍️ *H&H SHOP INSTANT ORDER*\n`;
+                msg += `------------------------------\n`;
+                msg += `*Item:* ${currentProductData.title}\n`;
+                msg += `*Price:* ${currentProductData.price}\n`;
+                msg += `*Quantity:* ${qty}\n`;
+                if (color) msg += `*Color:* ${color}\n`;
+                if (size) msg += `*Size:* ${size}\n`;
+                msg += `------------------------------\n`;
+                msg += `_Interested in purchasing this item immediately._`;
 
-                addToCart(item);
-                // Redirect to checkout
-                window.location.href = 'checkout.html';
+                const adminPhone = "254114433429";
+                window.open(`https://wa.me/${adminPhone}?text=${encodeURIComponent(msg)}`, '_blank');
             });
         }
 
@@ -389,21 +403,28 @@ document.addEventListener('DOMContentLoaded', () => {
             // For now, we simulate by sending WhatsApp
 
             // Build WhatsApp Message
-            let msg = `*New Order - ${name}*\n\n`;
+            const isVerified = trxCode.startsWith('VERIFIED-');
+            let msg = `🧾 *NEW ORDER - HEARTH & HEAL*\n`;
+            msg += `------------------------------\n`;
+            msg += `👤 *Customer:* ${name}\n`;
+            msg += `📍 *Delivery:* ${city}, ${street}\n`;
+            msg += `📞 *Phone:* ${phone}\n`;
+            msg += `------------------------------\n`;
+            msg += `*ITEMS:*\n`;
+
             cart.forEach(item => {
-                // Check if specific variation like Format or Size exists
                 const variation = item.size ? item.size : 'Std';
-                msg += `- ${item.qty}x ${item.title} [${item.color ? item.color + ', ' : ''}${variation}] @ ${item.price}\n`;
+                msg += `• ${item.qty}x ${item.title} [${item.color ? item.color + ', ' : ''}${variation}] @ ${item.price}\n`;
             });
-            msg += `\n*Total: KSH ${total.toLocaleString()}*\n`;
-            msg += `----------------\n`;
-            msg += `*Payment Details:*\n`;
-            msg += `Transaction Code: ${trxCode}\n`;
-            msg += `\n*Delivery Info:*\n`;
-            msg += `Phone: ${phone}\n`;
-            msg += `Email: ${email}\n`;
-            msg += `Location: ${city}, ${street}\n`;
-            // if (notes) msg += `Notes: ${notes}\n`;
+
+            msg += `------------------------------\n`;
+            msg += `💰 *TOTAL: KSH ${total.toLocaleString()}*\n`;
+            msg += `------------------------------\n`;
+            msg += `💳 *PAYMENT DETAILS:*\n`;
+            msg += `*Code:* ${trxCode}\n`;
+            msg += `*Status:* ${isVerified ? '✅ VERIFIED VIA MPESA' : '⏳ AWAITING MANUAL VERIFICATION'}\n`;
+            msg += `------------------------------\n`;
+            msg += `_Order submitted via Hearth & Heal Online Shop._`;
 
             const adminPhone = "254114433429";
             const url = `https://wa.me/${adminPhone}?text=${encodeURIComponent(msg)}`;
@@ -478,6 +499,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+
+        // Direct WhatsApp Order from Cart
+        const cartWhatsappBtn = document.getElementById('btn-cart-whatsapp');
+        if (cartWhatsappBtn) {
+            cartWhatsappBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const cartItems = getCart();
+                if (cartItems.length === 0) {
+                    alert("Your cart is empty.");
+                    return;
+                }
+
+                let total = 0;
+                let msg = `🛍️ *H&H CART ORDER - WHATSAPP*\n`;
+                msg += `------------------------------\n`;
+                cartItems.forEach(item => {
+                    const priceVal = parseFloat(item.price.replace('KSH ', ''));
+                    const lineTotal = priceVal * parseInt(item.qty);
+                    total += lineTotal;
+                    msg += `• ${item.qty}x ${item.title} [${item.color ? item.color + ', ' : ''}${item.size || 'Std'}] @ ${item.price}\n`;
+                });
+                msg += `------------------------------\n`;
+                msg += `💰 *TOTAL: KSH ${total.toLocaleString()}*\n`;
+                msg += `------------------------------\n`;
+                msg += `_Please confirm my order and share payment instructions._`;
+
+                const adminPhone = "254114433429";
+                window.open(`https://wa.me/${adminPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+            });
+        }
     }
 
 });
