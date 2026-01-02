@@ -132,8 +132,8 @@ async function sendOtpEmail(email, otp) {
 
 /* ----------------------------- Auth/OTP API ----------------------------- */
 
-// Request OTP
-app.post("/auth/otp/request", async (req, res) => {
+// Request OTP (Supports both standard and short paths)
+app.post(["/auth/otp/request", "/request-otp"], async (req, res) => {
     try {
         const { phone, email } = req.body;
         if (!phone && !email) return res.status(400).json({ error: "Phone or email required" });
@@ -172,8 +172,11 @@ app.post("/auth/otp/request", async (req, res) => {
     }
 });
 
-// Verify OTP
-app.post("/auth/otp/verify", (req, res) => {
+
+
+
+// Verify OTP (Supports both standard and short paths)
+app.post(["/auth/otp/verify", "/verify-otp"], (req, res) => {
     try {
         const { ref, otp } = req.body;
         if (!ref || !otp) return res.status(400).json({ error: "Missing ref or otp" });
