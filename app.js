@@ -14,6 +14,8 @@ const crypto = require("crypto");
 const cron = require("node-cron");
 const winston = require("winston");
 const nodemailer = require("nodemailer");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 
@@ -49,7 +51,9 @@ const store = {
     transactions: new Map(), // key: txn_id -> transaction detail
     receipts: new Map(),     // key: receipt_serial -> receipt detail
     audit: [],               // append-only audit events
-    otps: new Map()          // key: identifier (email/phone) -> { code, expiresAt }
+    otps: new Map(),         // key: ref -> { otp, identifier, expiresAt }
+    users: new Map(),        // key: identifier -> { passwordHash, verified }
+    verifications: new Map() // key: ref -> { code, identifier, expiresAt }
 };
 
 /* ----------------------------- Helpers ---------------------------------- */
@@ -67,6 +71,7 @@ const ENV = {
     WEBHOOK_SHARED_SECRET: process.env.WEBHOOK_SHARED_SECRET || "change_me",
     EMAIL_USER: process.env.EMAIL_USER,
     EMAIL_PASS: process.env.EMAIL_PASS,
+    JWT_SECRET: process.env.JWT_SECRET || "default_h&h_secret_change_me",
     OTP_EXPIRY_MS: 5 * 60 * 1000 // 5 minutes
 };
 
@@ -108,8 +113,8 @@ function generateOtp() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Send OTP via Email
-async function sendOtpEmail(email, otp) {
+// Send Generic Email
+async function sendEmail(email, subject, text) {
     if (!ENV.EMAIL_USER || !ENV.EMAIL_PASS) {
         logger.warn("Email credentials missing, skipping email send.");
         return;
@@ -125,78 +130,131 @@ async function sendOtpEmail(email, otp) {
     await transporter.sendMail({
         from: `Hearth & Heal <${ENV.EMAIL_USER}>`,
         to: email,
-        subject: "Your OTP Code",
-        text: `Your OTP is ${otp}. It expires in 5 minutes.`
+        subject,
+        text
     });
 }
 
 /* ----------------------------- Auth/OTP API ----------------------------- */
 
-// Request OTP (Supports both standard and short paths)
-app.post(["/auth/otp/request", "/request-otp"], async (req, res) => {
+// STEP 1: Request Email Verification (Signup)
+app.post("/request-verification", async (req, res) => {
     try {
-        const { phone, email } = req.body;
-        if (!phone && !email) return res.status(400).json({ error: "Phone or email required" });
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ error: "Email required" });
 
-        const otp = generateOtp();
+        const code = generateOtp();
         const ref = crypto.randomUUID();
+        store.verifications.set(ref, { code, identifier: email, expiresAt: Date.now() + 10 * 60 * 1000 });
 
-        store.otps.set(ref, { otp, identifier: phone || email, expiresAt: Date.now() + ENV.OTP_EXPIRY_MS });
+        await sendEmail(email, "Verify Your Hearth & Heal Email", `Your verification code is ${code}. It expires in 10 minutes.`);
 
-        // Simulate SMS send behavior
-        try {
-            const smsSuccess = Math.random() > 0.3; // simulate 70% success
-            if (!smsSuccess && email) {
-                await sendOtpEmail(email, otp);
-                audit("OTP_SENT_EMAIL", { ref, email });
-                return res.json({ ref, channel: "email", message: "OTP sent via email" });
-            }
-
-            // Mock SMS
-            logger.info({ msg: "OTP SMS MOCK", ref, phone, otp });
-            console.log(`[MOCK OTP SMS] Sent to ${phone}: ${otp}`);
-            audit("OTP_SENT_SMS", { ref, phone });
-
-            return res.json({ ref, channel: "sms", message: "OTP sent via SMS" });
-        } catch (err) {
-            if (email) {
-                await sendOtpEmail(email, otp);
-                audit("OTP_SENT_EMAIL_FALLBACK", { ref, email });
-                return res.json({ ref, channel: "email", message: "OTP sent via email (fallback)" });
-            }
-            throw err;
-        }
+        audit("VERIFICATION_REQUESTED", { ref, email });
+        res.json({ ref, message: "Verification code sent to your email" });
     } catch (err) {
         logger.error({ err });
-        res.status(500).json({ error: "Failed to send OTP" });
+        res.status(500).json({ error: "Failed to send verification code" });
     }
 });
 
+// STEP 2: Verify Email & Create Account
+app.post("/verify-email", (req, res) => {
+    try {
+        const { ref, code, password } = req.body;
+        const record = store.verifications.get(ref);
+        if (!record) return res.status(400).json({ error: "Invalid reference" });
+        if (Date.now() > record.expiresAt) {
+            store.verifications.delete(ref);
+            return res.status(400).json({ error: "Code expired" });
+        }
+        if (record.code !== code) return res.status(400).json({ error: "Invalid code" });
 
+        if (!password || password.length < 6) {
+            return res.status(400).json({ error: "Password must be at least 6 characters" });
+        }
 
+        const passwordHash = bcrypt.hashSync(password, 10);
+        store.users.set(record.identifier, { passwordHash, verified: true });
+        store.verifications.delete(ref);
 
-// Verify OTP (Supports both standard and short paths)
+        audit("USER_REGISTERED", { identifier: record.identifier });
+        res.json({ success: true, message: "Email verified and account created successfully" });
+    } catch (err) {
+        logger.error({ err });
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+// STEP 3: Login with Password (triggers OTP)
+app.post("/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = store.users.get(email);
+
+        if (!user || !user.verified) {
+            return res.status(400).json({ error: "Account not found or not verified" });
+        }
+
+        if (!bcrypt.compareSync(password, user.passwordHash)) {
+            return res.status(400).json({ error: "Invalid credentials" });
+        }
+
+        // Correct Password -> Generate OTP
+        const otp = generateOtp();
+        const ref = crypto.randomUUID();
+        store.otps.set(ref, { otp, identifier: email, expiresAt: Date.now() + ENV.OTP_EXPIRY_MS });
+
+        await sendEmail(email, "Your Login OTP", `Your login OTP is ${otp}. It expires in 5 minutes.`);
+
+        audit("LOGIN_OTP_SENT", { ref, email });
+        res.json({ ref, message: "OTP sent to your email for 2nd factor verification" });
+    } catch (err) {
+        logger.error({ err });
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+// STEP 4: Verify OTP & Issue Token
 app.post(["/auth/otp/verify", "/verify-otp"], (req, res) => {
     try {
         const { ref, otp } = req.body;
-        if (!ref || !otp) return res.status(400).json({ error: "Missing ref or otp" });
-
         const record = store.otps.get(ref);
+
         if (!record) return res.status(400).json({ error: "Invalid reference" });
         if (Date.now() > record.expiresAt) {
             store.otps.delete(ref);
             return res.status(400).json({ error: "OTP expired" });
         }
-        if (record.otp !== otp) {
-            return res.status(400).json({ error: "Invalid OTP" });
-        }
+        if (record.otp !== otp) return res.status(400).json({ error: "Invalid OTP" });
 
         store.otps.delete(ref);
-        audit("OTP_VERIFIED", { identifier: record.identifier });
-        res.json({ success: true, message: "OTP verified successfully", user: { identifier: record.identifier } });
+
+        // Issue JWT token
+        const token = jwt.sign({ email: record.identifier }, ENV.JWT_SECRET, { expiresIn: "2h" });
+
+        audit("LOGIN_SUCCESS", { identifier: record.identifier });
+        res.json({ success: true, token, user: { email: record.identifier, name: record.identifier.split('@')[0] } });
     } catch (err) {
         logger.error({ err });
         res.status(500).json({ error: "Server error" });
+    }
+});
+
+// Legacy Request OTP (Purely for backward compatibility)
+app.post(["/auth/otp/request", "/request-otp"], async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ error: "Email required" });
+
+        const otp = generateOtp();
+        const ref = crypto.randomUUID();
+        store.otps.set(ref, { otp, identifier: email, expiresAt: Date.now() + ENV.OTP_EXPIRY_MS });
+
+        await sendEmail(email, "Your Hearth & Heal OTP", `Your OTP is ${otp}. It expires in 5 minutes.`);
+        return res.json({ ref, message: "OTP sent via email" });
+    } catch (err) {
+        logger.error({ err });
+        res.status(500).json({ error: "Failed to send OTP" });
     }
 });
 

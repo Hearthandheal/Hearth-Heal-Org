@@ -1,64 +1,38 @@
 /**
  * Hearth and Heal - Authentication Logic
- * Handles Login, Signup, Password Reset, and Session Protection
- * Enhanced with password hashing and input sanitization
+ * Robust system with Email Verification, Password hashing, and 2FA OTP.
  */
 
 const Auth = {
-    // Keys for localStorage
-    USERS_KEY: 'hearth_users',
+    API_BASE: 'https://hearth-heal-org.onrender.com',
     CURRENT_USER_KEY: 'hearth_current_user',
+    JWT_KEY: 'hearth_jwt_token',
 
-    // Simple password hashing using SHA-256
-    hashPassword: async (password) => {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(password);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    },
-
-    // Sanitize input to prevent XSS
-    sanitizeInput: (input) => {
-        const div = document.createElement('div');
-        div.textContent = input;
-        return div.innerHTML;
-    },
-
-    // Initialize (helper to get data)
-    getUsers: () => JSON.parse(localStorage.getItem(Auth.USERS_KEY) || '[]'),
-    setUsers: (users) => localStorage.setItem(Auth.USERS_KEY, JSON.stringify(users)),
-    getCurrentUser: () => JSON.parse(localStorage.getItem(Auth.CURRENT_USER_KEY)),
-    setCurrentUser: (user) => localStorage.setItem(Auth.CURRENT_USER_KEY, JSON.stringify(user)),
-
-    /**
-     * Check if user is logged in.
-     * If not, and not on an auth page, redirect to login.
-     */
+    // Initialize session
     checkSession: () => {
         const currentUser = Auth.getCurrentUser();
         const path = window.location.pathname;
-        const pageName = path.split('/').pop().toLowerCase();
+        const pageName = path.split('/').pop().toLowerCase() || 'index.html';
 
-        // Pages that require being logged OUT
         const authPages = ['login.html', 'signup.html', 'forgot-password.html'];
 
-        // Pages that require being logged IN (Empty means default public access)
-        const protectedPages = [];
-
         if (currentUser) {
-            // Logged In
             if (authPages.includes(pageName)) {
                 window.location.href = 'index.html';
             }
             Auth.updateUI(true);
         } else {
-            // Logged Out
-            if (protectedPages.includes(pageName)) {
-                window.location.href = 'login.html';
-            }
             Auth.updateUI(false);
         }
+    },
+
+    getCurrentUser: () => JSON.parse(localStorage.getItem(Auth.CURRENT_USER_KEY)),
+    setCurrentUser: (user) => localStorage.setItem(Auth.CURRENT_USER_KEY, JSON.stringify(user)),
+    setToken: (token) => localStorage.setItem(Auth.JWT_KEY, token),
+    logout: () => {
+        localStorage.removeItem(Auth.CURRENT_USER_KEY);
+        localStorage.removeItem(Auth.JWT_KEY);
+        window.location.href = 'login.html';
     },
 
     updateUI: (isLoggedIn) => {
@@ -69,209 +43,112 @@ const Auth = {
         if (target) {
             if (isLoggedIn) {
                 target.textContent = 'Account';
-                if (target.tagName === 'A') {
-                    target.href = 'account.html';
-                    target.onclick = null; // Let the link work normally
-                } else {
-                    // For button, redirect to account
-                    target.onclick = () => window.location.href = 'account.html';
-                }
+                target.href = 'account.html';
+                target.onclick = null;
             } else {
                 target.textContent = 'Login';
-                if (target.tagName === 'A') {
-                    target.href = 'login.html';
-                    target.onclick = null;
-                } else {
-                    target.onclick = () => window.location.href = 'login.html';
-                }
+                target.href = 'login.html';
+                target.onclick = null;
             }
         }
     },
 
-    /**
-     * Login User
-     * @param {string} email 
-     * @param {string} password 
-     */
-    login: async (email, password) => {
-        const users = Auth.getUsers();
-        const hashedPassword = await Auth.hashPassword(password);
-        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === hashedPassword);
+    /* -------------------- API WRAPPERS -------------------- */
 
-        if (user) {
-            Auth.setCurrentUser({ email: user.email, name: user.name || user.email.split('@')[0], bio: user.bio });
-            return { success: true };
-        } else {
-            return { success: false, message: 'Invalid email or password' };
-        }
-    },
-
-    /**
-     * Register New User
-     * @param {string} email 
-     * @param {string} password 
-     */
-    signup: async (email, password) => {
-        const users = Auth.getUsers();
-
-        // Sanitize email input
-        email = Auth.sanitizeInput(email.trim());
-
-        if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
-            return { success: false, message: 'Email already exists' };
-        }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!email || !emailRegex.test(email)) {
-            return { success: false, message: 'Please enter a valid email address' };
-        }
-
-        if (!password || password.length < 6) {
-            return { success: false, message: 'Password must be at least 6 characters long' };
-        }
-
-        // Hash password before storing
-        const hashedPassword = await Auth.hashPassword(password);
-        const newUser = { email, password: hashedPassword, name: email.split('@')[0], bio: '' };
-        users.push(newUser);
-        Auth.setUsers(users);
-        Auth.setCurrentUser({ email: newUser.email, name: newUser.name, bio: newUser.bio });
-        return { success: true };
-    },
-
-    /**
-     * Update User Profile
-     * @param {object} data { name, bio }
-     */
-    updateProfile: (data) => {
-        const currentUser = Auth.getCurrentUser();
-        if (!currentUser) return { success: false, message: 'Not logged in' };
-
-        const users = Auth.getUsers();
-        const userIndex = users.findIndex(u => u.email === currentUser.email);
-
-        if (userIndex !== -1) {
-            // Update users array
-            users[userIndex].name = data.name;
-            users[userIndex].bio = data.bio;
-            Auth.setUsers(users);
-
-            // Update current user session
-            currentUser.name = data.name;
-            currentUser.bio = data.bio;
-            Auth.setCurrentUser(currentUser);
-            return { success: true };
-        }
-        return { success: false, message: 'User not found' };
-    },
-
-    /**
-     * Change Password
-     * @param {string} oldPassword 
-     * @param {string} newPassword 
-     */
-    changePassword: async (oldPassword, newPassword) => {
-        const currentUser = Auth.getCurrentUser();
-        if (!currentUser) return { success: false, message: 'Not logged in' };
-
-        const users = Auth.getUsers();
-        const userIndex = users.findIndex(u => u.email === currentUser.email);
-
-        if (userIndex === -1) return { success: false, message: 'User not found' };
-
-        const hashedOldPassword = await Auth.hashPassword(oldPassword);
-        if (users[userIndex].password !== hashedOldPassword) {
-            return { success: false, message: 'Incorrect current password' };
-        }
-
-        if (newPassword.length < 6) {
-            return { success: false, message: 'New password must be at least 6 characters' };
-        }
-
-        const hashedNewPassword = await Auth.hashPassword(newPassword);
-        users[userIndex].password = hashedNewPassword;
-        Auth.setUsers(users);
-        return { success: true };
-    },
-
-    /**
-     * Reset Password (Forgot Password flow)
-     * @param {string} email 
-     * @param {string} newPassword 
-     */
-    resetPassword: (email, newPassword) => {
-        const users = Auth.getUsers();
-        const userIndex = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
-
-        if (userIndex !== -1) {
-            users[userIndex].password = newPassword;
-            Auth.setUsers(users);
-            return { success: true };
-        } else {
-            return { success: false, message: 'Email not found' };
-        }
-    },
-
-    requestOTP: async (identifier, type) => {
+    // SIGNUP STEP 1
+    requestSignupVerification: async (email) => {
         try {
-            const body = type === 'email' ? { email: identifier } : { phone: identifier };
-            const response = await fetch('https://hearth-heal-org.onrender.com/auth/otp/request', {
+            const response = await fetch(`${Auth.API_BASE}/request-verification`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
+                body: JSON.stringify({ email })
             });
             const data = await response.json();
             if (response.ok) {
-                // Save reference for verification
-                Auth._currentOtpRef = data.ref;
-                Auth._currentIdentifier = identifier;
-                return { success: true, channel: data.channel };
-            }
-            return { success: false, message: data.error || 'Failed to send OTP' };
-        } catch (error) {
-            console.error(error);
-            return { success: false, message: 'Network error' };
-        }
-    },
-
-    verifyOTP: async (identifier, code) => {
-        try {
-            const ref = Auth._currentOtpRef;
-            if (!ref) return { success: false, message: 'OTP Reference missing. Please request again.' };
-
-            const response = await fetch('https://hearth-heal-org.onrender.com/auth/otp/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ref, otp: code })
-            });
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                // Log user in
-                const userIdentifier = data.user.identifier || identifier;
-                Auth.setCurrentUser({
-                    email: userIdentifier,
-                    name: userIdentifier.split('@')[0],
-                    bio: ''
-                });
+                Auth._signupRef = data.ref;
+                Auth._signupEmail = email;
                 return { success: true };
             }
-            return { success: false, message: data.error || 'Verification failed' };
-        } catch (error) {
-            console.error(error);
-            return { success: false, message: 'Network error' };
+            return { success: false, message: data.error };
+        } catch (err) {
+            return { success: false, message: 'Server unreachable' };
         }
     },
 
-    /**
-     * Logout
-     * ...
-     */
-    logout: () => {
-        localStorage.removeItem(Auth.CURRENT_USER_KEY);
-        window.location.href = 'login.html';
+    // SIGNUP STEP 2
+    completeSignup: async (code, password) => {
+        try {
+            const response = await fetch(`${Auth.API_BASE}/verify-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ref: Auth._signupRef, code, password })
+            });
+            const data = await response.json();
+            if (response.ok) return { success: true };
+            return { success: false, message: data.error };
+        } catch (err) {
+            return { success: false, message: 'Server unreachable' };
+        }
+    },
+
+    // LOGIN STEP 1
+    login: async (email, password) => {
+        try {
+            const response = await fetch(`${Auth.API_BASE}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                Auth._loginRef = data.ref;
+                Auth._loginEmail = email;
+                return { success: true };
+            }
+            return { success: false, message: data.error };
+        } catch (err) {
+            return { success: false, message: 'Server unreachable' };
+        }
+    },
+
+    // LOGIN STEP 2 (OTP)
+    verifyOTP: async (code) => {
+        try {
+            const response = await fetch(`${Auth.API_BASE}/verify-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ref: Auth._loginRef, otp: code })
+            });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                Auth.setToken(data.token);
+                Auth.setCurrentUser(data.user);
+                return { success: true };
+            }
+            return { success: false, message: data.error };
+        } catch (err) {
+            return { success: false, message: 'Server unreachable' };
+        }
+    },
+
+    // BACKWARD COMPATIBILITY / PASSWORDLESS REQUEST
+    requestOTP: async (identifier, type) => {
+        try {
+            const response = await fetch(`${Auth.API_BASE}/request-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: identifier })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                Auth._loginRef = data.ref;
+                return { success: true, channel: 'email' };
+            }
+            return { success: false, message: data.error };
+        } catch (err) {
+            return { success: false, message: 'Server unreachable' };
+        }
     }
 };
 
-// Run session check immediately
 Auth.checkSession();
