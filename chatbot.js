@@ -289,8 +289,8 @@ const olafBrain = {
     },
     shop: {
       book: "Our CEO wrote a wonderful book: <b>'I Chose To Let You Down'</b> (KSH 1,000). It's about the route from heartbreak to healing. 📖",
-      apparel: "We have branded Hoodies (KSH 2,500), Sweatshirts (KSH 2,000), T-Shirts (KSH 750), and Polo Shirts (KSH 1,000)! 👕",
-      accessories: "We have Headbands (KSH 500), Scarves (KSH 600), and Baseball Caps (KSH 500)! 🧢"
+      apparel: "We have branded Hoodies (KSH 2,500), Sweatshirts (KSH 2,000), T-Shirts (KSH 750), and Polo Shirts (KSH 1,000)! They all come in both <b>Black and White</b>. 👕",
+      accessories: "We have Headbands (KSH 500), Scarves (KSH 600), and Baseball Caps (KSH 500)! Available in <b>Black and White</b> too. 🧢"
     },
     donation: {
       impact: "Every bit helps! KSH 1,000 provides materials, KSH 5,000 supports a group session, and KSH 25,000 rents a safe space for an entire month! 💖",

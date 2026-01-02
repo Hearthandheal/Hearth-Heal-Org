@@ -66,6 +66,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const qtyInput = document.getElementById('modal-qty');
         const sizeSelect = document.getElementById('modal-size');
+        const colorSelect = document.getElementById('modal-color');
+        const colorGroup = document.getElementById('modal-color-group');
         const sizeLabel = document.querySelector('label[for="modal-size"]');
 
         let currentProductData = {};
@@ -125,17 +127,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Dynamic Options Logic
             if (category === 'book') {
+                colorGroup.style.display = 'none';
                 sizeLabel.innerText = "Format";
                 sizeSelect.innerHTML = `
                     <option value="Hard Copy">Hard Copy (Physical)</option>
                     <option value="E-Pub">E-Pub (Digital)</option>
                 `;
             } else if (category === 'accessories') {
+                const colorsRaw = productElement.dataset.colors || "";
+                if (colorsRaw) {
+                    colorGroup.style.display = 'block';
+                    const colors = colorsRaw.split(',').map(c => c.trim());
+                    colorSelect.innerHTML = colors.map(c => `<option value="${c}">${c}</option>`).join('');
+                } else {
+                    colorGroup.style.display = 'none';
+                }
+
                 sizeLabel.innerText = "Size";
                 sizeSelect.innerHTML = `
                     <option value="One Size">One Size</option>
                 `;
             } else {
+                const colorsRaw = productElement.dataset.colors || "";
+                if (colorsRaw) {
+                    colorGroup.style.display = 'block';
+                    const colors = colorsRaw.split(',').map(c => c.trim());
+                    colorSelect.innerHTML = colors.map(c => `<option value="${c}">${c}</option>`).join('');
+                } else {
+                    colorGroup.style.display = 'none';
+                }
+
                 sizeLabel.innerText = "Size";
                 sizeSelect.innerHTML = `
                     <option value="S">Small</option>
@@ -144,6 +165,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     <option value="XL">XL</option>
                     <option value="XXL">XXL</option>
                 `;
+            }
+
+            // Handle Image Swapping on Color Change
+            if (colorSelect) {
+                colorSelect.onchange = () => {
+                    const selectedColor = colorSelect.value.toLowerCase();
+                    const colorImg = productElement.dataset[`img${selectedColor.charAt(0).toUpperCase() + selectedColor.slice(1)}`];
+                    if (colorImg) {
+                        modalImg.src = colorImg;
+                    } else if (currentProductData.imgSrc) {
+                        modalImg.src = currentProductData.imgSrc;
+                    }
+                };
             }
 
             modal.classList.add('active');
@@ -167,11 +201,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
                 const qty = qtyInput.value;
                 const size = sizeSelect ? sizeSelect.value : 'M';
+                const color = (colorGroup && colorGroup.style.display !== 'none') ? colorSelect.value : '';
 
                 const item = {
                     ...currentProductData,
                     qty,
-                    size
+                    size,
+                    color
                 };
 
                 addToCart(item);
@@ -186,8 +222,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const card = btn.closest('.product-card');
                 const title = card.querySelector('.product-title').innerText;
                 const price = card.querySelector('.product-price').innerText;
+                const colorsRaw = card.dataset.colors || "";
+                const defaultColor = colorsRaw ? colorsRaw.split(',')[0].trim() : "";
 
-                addToCart({ title, price, qty: 1, size: 'M' }); // Default values
+                addToCart({ title, price, qty: 1, size: 'M', color: defaultColor }); // Default values
 
                 // Visual Feedback
                 const original = btn.innerHTML;
@@ -224,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.innerHTML = `
                     <div>
                         <strong>${item.title}</strong><br>
-                        <small>Size: ${item.size} | Qty: ${item.qty}</small>
+                        <small>${item.color ? item.color + ' | ' : ''}Size: ${item.size} | Qty: ${item.qty}</small>
                     </div>
                     <span>KSH ${lineTotal.toLocaleString()}</span>
                 `;
@@ -277,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cart.forEach(item => {
                 // Check if specific variation like Format or Size exists
                 const variation = item.size ? item.size : 'Std';
-                msg += `- ${item.qty}x ${item.title} [${variation}] @ ${item.price}\n`;
+                msg += `- ${item.qty}x ${item.title} [${item.color ? item.color + ', ' : ''}${variation}] @ ${item.price}\n`;
             });
             msg += `\n*Total: KSH ${total.toLocaleString()}*\n`;
             msg += `----------------\n`;
@@ -327,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
             row.innerHTML = `
                 <td>
                     <div style="font-weight:600;">${item.title}</div>
-                    <div style="font-size:0.85rem; color:#666;">${item.size || 'Std'}</div>
+                    <div style="font-size:0.85rem; color:#666;">${item.color ? item.color + ' | ' : ''}${item.size || 'Std'}</div>
                 </td>
                 <td>${item.price}</td>
                 <td>
