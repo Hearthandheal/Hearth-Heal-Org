@@ -223,7 +223,16 @@ app.post("/payments", (req, res) => {
             return res.json({ payment_id: paymentId, redirect_url: checkoutUrl });
         } else if (channel === "mpesa") {
             // STK Push trigger (stub)
-            // In production: call Daraja API and return user instruction
+            // For this demo, we auto-mark as PAID after 10 seconds to simulate user completing payment
+            setTimeout(() => {
+                if (invoice.status === "PENDING") {
+                    invoice.status = "PAID";
+                    invoice.paid_at = now();
+                    const receipt = issueReceipt(invoice);
+                    audit("AUTO_PAID_SIMULATION", { reference_number, receipt_serial: receipt.serial });
+                }
+            }, 10000);
+
             return res.json({
                 payment_id: paymentId,
                 message: "M-Pesa STK Push initiated. Check your phone to approve.",

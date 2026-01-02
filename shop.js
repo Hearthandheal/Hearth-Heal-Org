@@ -290,6 +290,84 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 
+        const stkBtn = document.getElementById('btn-stk-push');
+        const stkStatus = document.getElementById('stk-status');
+        const stkStatusText = document.getElementById('stk-status-text');
+        const trxInput = document.getElementById('payment-code');
+        const BACKEND_URL = 'https://hearth-heal-org.onrender.com';
+
+        if (stkBtn) {
+            stkBtn.addEventListener('click', async () => {
+                const phone = document.getElementById('mpesa-phone').value;
+                if (!phone || phone.length < 10) {
+                    alert("Please enter a valid M-Pesa phone number.");
+                    return;
+                }
+
+                stkBtn.disabled = true;
+                stkStatus.style.display = 'block';
+                stkStatusText.innerText = "Initiating prompt...";
+
+                try {
+                    // 1. Create Invoice
+                    const invRes = await fetch(`${BACKEND_URL}/invoices`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            customerId: phone,
+                            amount: total,
+                            currency: 'KES',
+                            description: 'Hearth & Heal Merchandise'
+                        })
+                    });
+                    const invoice = await invRes.json();
+
+                    if (!invRes.ok) throw new Error(invoice.error || "Failed to create invoice");
+
+                    // 2. Trigger Payment (STK Push)
+                    const payRes = await fetch(`${BACKEND_URL}/payments`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            reference_number: invoice.reference_number,
+                            channel: 'mpesa'
+                        })
+                    });
+                    const payment = await payRes.json();
+
+                    stkStatusText.innerText = "Prompt sent! Awaiting payment...";
+
+                    // 3. Poll for Status
+                    const pollInterval = setInterval(async () => {
+                        try {
+                            const statusRes = await fetch(`${BACKEND_URL}/invoices/${invoice.reference_number}`);
+                            const statusData = await statusRes.json();
+
+                            if (statusData.status === 'PAID') {
+                                clearInterval(pollInterval);
+                                stkStatusText.innerHTML = "✅ <span style='color:green; font-weight:bold;'>Payment Verified Automatically!</span>";
+                                trxInput.value = "VERIFIED-" + invoice.reference_number;
+                                trxInput.style.backgroundColor = '#d4edda';
+                                stkBtn.innerText = "Paid & Verified";
+                            }
+                        } catch (e) {
+                            console.error("Polling error:", e);
+                        }
+                    }, 3000);
+
+                    // Timeout polling after 2 minutes
+                    setTimeout(() => clearInterval(pollInterval), 120000);
+
+                } catch (err) {
+                    console.error(err);
+                    alert("Error: " + err.message);
+                    stkBtn.disabled = false;
+                    stkStatus.style.display = 'none';
+                }
+            });
+        }
+
+
         // Complete Order Logic
         completeOrderBtn.addEventListener('click', () => {
             const name = document.getElementById('cust-name').value;

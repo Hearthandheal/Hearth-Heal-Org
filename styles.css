@@ -1518,480 +1518,513 @@ input:checked+.slider:before {
   .account-layout {
     grid-template-columns: 1fr;
   }
-}/* ========================================
+}
+
+/* ========================================
    DONATION PAGE STYLES
    ======================================== */
 
 /* Donate Hero */
 .donate-hero {
-    background: radial-gradient(circle at center, rgba(0, 230, 118, 0.08) 0%, var(--color-bg) 70%);
-    padding: 8rem 0 6rem;
-    text-align: center;
+  background: radial-gradient(circle at center, rgba(0, 230, 118, 0.08) 0%, var(--color-bg) 70%);
+  padding: 8rem 0 6rem;
+  text-align: center;
 }
 
 .donate-hero-content h1 {
-    font-size: 3.5rem;
-    margin-bottom: 1.5rem;
+  font-size: 3.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .hero-subtitle {
-    font-size: 1.25rem;
-    color: var(--color-text-light);
-    max-width: 700px;
-    margin: 0 auto 3rem;
+  font-size: 1.25rem;
+  color: var(--color-text-light);
+  max-width: 700px;
+  margin: 0 auto 3rem;
 }
 
 .hero-stats {
-    display: flex;
-    justify-content: center;
-    gap: 4rem;
-    margin-top: 3rem;
+  display: flex;
+  justify-content: center;
+  gap: 4rem;
+  margin-top: 3rem;
 }
 
 .stat-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .stat-item i {
-    color: var(--color-primary);
-    width: 40px;
-    height: 40px;
+  color: var(--color-primary);
+  width: 40px;
+  height: 40px;
 }
 
 .stat-item h3 {
-    font-size: 2rem;
-    margin: 0;
-    color: var(--color-primary);
+  font-size: 2rem;
+  margin: 0;
+  color: var(--color-primary);
 }
 
 .stat-item p {
-    margin: 0;
-    color: var(--color-text-light);
-    font-size: 0.9rem;
+  margin: 0;
+  color: var(--color-text-light);
+  font-size: 0.9rem;
 }
 
 /* Donation Section */
 .donation-section {
-    padding: 4rem 0;
-    background: var(--color-bg-alt);
+  padding: 4rem 0;
+  background: var(--color-bg-alt);
 }
 
 .donation-card {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: 3rem;
-    max-width: 800px;
-    margin: 0 auto;
-    box-shadow: var(--shadow-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 3rem;
+  max-width: 800px;
+  margin: 0 auto;
+  box-shadow: var(--shadow-lg);
 }
 
 .donation-card h2 {
-    text-align: center;
-    margin-bottom: 0.5rem;
-    font-size: 2rem;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
 }
 
 .section-subtitle {
-    text-align: center;
-    color: var(--color-text-light);
-    margin-bottom: 2.5rem;
+  text-align: center;
+  color: var(--color-text-light);
+  margin-bottom: 2.5rem;
 }
 
 /* Amount Grid */
 .amount-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    margin-bottom: 2rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
 }
 
 .amount-btn {
-    background: var(--color-bg);
-    border: 2px solid var(--color-border);
-    color: var(--color-text);
-    padding: 1.5rem;
-    border-radius: var(--radius-md);
-    font-size: 1.5rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: var(--transition);
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  color: var(--color-text);
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
 }
 
 .amount-btn:hover {
-    border-color: var(--color-primary);
-    background: rgba(0, 230, 118, 0.05);
-    transform: translateY(-2px);
+  border-color: var(--color-primary);
+  background: rgba(0, 230, 118, 0.05);
+  transform: translateY(-2px);
 }
 
 .amount-btn.active {
-    border-color: var(--color-primary);
-    background: var(--color-primary);
-    color: var(--color-bg);
-    box-shadow: var(--shadow-green);
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-bg);
+  box-shadow: var(--shadow-green);
 }
 
 /* Custom Amount */
 .custom-amount {
-    margin-bottom: 2rem;
+  margin-bottom: 2rem;
 }
 
 .custom-amount label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: var(--color-text-light);
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--color-text-light);
 }
 
 .input-group {
-    display: flex;
-    align-items: center;
-    background: var(--color-bg);
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius-md);
-    overflow: hidden;
+  display: flex;
+  align-items: center;
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
 .input-group:focus-within {
-    border-color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .currency {
-    padding: 1rem 1.5rem;
-    background: var(--color-bg-alt);
-    color: var(--color-text-light);
-    font-size: 1.25rem;
-    font-weight: 700;
+  padding: 1rem 1.5rem;
+  background: var(--color-bg-alt);
+  color: var(--color-text-light);
+  font-size: 1.25rem;
+  font-weight: 700;
 }
 
 .input-group input {
-    flex: 1;
-    border: none;
-    background: transparent;
-    padding: 1rem;
-    color: var(--color-text);
-    font-size: 1.25rem;
-    outline: none;
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 1rem;
+  color: var(--color-text);
+  font-size: 1.25rem;
+  outline: none;
 }
 
 /* Donation Type */
 .donation-type {
-    display: flex;
-    gap: 2rem;
-    margin-bottom: 2.5rem;
-    padding: 1.5rem;
-    background: var(--color-bg);
-    border-radius: var(--radius-md);
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+  padding: 1.5rem;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
 }
 
 .donation-type label {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    cursor: pointer;
-    font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 1.1rem;
 }
 
 .donation-type input[type="radio"] {
-    width: 20px;
-    height: 20px;
-    accent-color: var(--color-primary);
+  width: 20px;
+  height: 20px;
+  accent-color: var(--color-primary);
 }
 
 /* Payment Methods */
 .payment-methods {
-    margin-bottom: 2rem;
+  margin-bottom: 2rem;
 }
 
 .payment-methods h3 {
-    margin-bottom: 1.5rem;
-    font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
 }
 
 .payment-option {
-    margin-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .payment-btn {
-    width: 100%;
-    padding: 1.25rem 2rem;
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-bg);
-    color: var(--color-text);
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    transition: var(--transition);
+  width: 100%;
+  padding: 1.25rem 2rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  transition: var(--transition);
 }
 
 .payment-btn:hover {
-    border-color: var(--color-primary);
-    background: rgba(0, 230, 118, 0.05);
-    transform: translateY(-2px);
+  border-color: var(--color-primary);
+  background: rgba(0, 230, 118, 0.05);
+  transform: translateY(-2px);
 }
 
 .payment-btn i {
-    width: 24px;
-    height: 24px;
+  width: 24px;
+  height: 24px;
 }
 
 .paypal-btn:hover {
-    border-color: #0070ba;
-    background: rgba(0, 112, 186, 0.05);
+  border-color: #0070ba;
+  background: rgba(0, 112, 186, 0.05);
 }
 
 .stripe-btn:hover {
-    border-color: #635bff;
-    background: rgba(99, 91, 255, 0.05);
+  border-color: #635bff;
+  background: rgba(99, 91, 255, 0.05);
 }
 
 .mpesa-btn:hover {
-    border-color: #00a651;
-    background: rgba(0, 166, 81, 0.05);
+  border-color: #00a651;
+  background: rgba(0, 166, 81, 0.05);
 }
 
 .payment-note {
-    margin-top: 0.5rem;
-    font-size: 0.9rem;
-    color: var(--color-text-light);
-    text-align: center;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--color-text-light);
+  text-align: center;
 }
 
 /* M-Pesa Details */
 .mpesa-details {
-    margin-top: 1rem;
-    padding: 1.5rem;
-    background: var(--color-bg-alt);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-border);
+  margin-top: 1rem;
+  padding: 1.5rem;
+  background: var(--color-bg-alt);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
 }
 
 .mpesa-details p {
-    margin: 0.5rem 0;
-    font-size: 1.1rem;
+  margin: 0.5rem 0;
+  font-size: 1.1rem;
 }
 
 .copy-text {
-    color: var(--color-primary);
-    font-weight: 700;
-    padding: 0.25rem 0.5rem;
-    background: rgba(0, 230, 118, 0.1);
-    border-radius: 4px;
+  color: var(--color-primary);
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  background: rgba(0, 230, 118, 0.1);
+  border-radius: 4px;
 }
 
 /* Tax Info */
 .tax-info {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1.5rem;
-    background: rgba(0, 230, 118, 0.05);
-    border: 1px solid rgba(0, 230, 118, 0.2);
-    border-radius: var(--radius-md);
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: rgba(0, 230, 118, 0.05);
+  border: 1px solid rgba(0, 230, 118, 0.2);
+  border-radius: var(--radius-md);
 }
 
 .tax-info i {
-    color: var(--color-primary);
-    flex-shrink: 0;
-    margin-top: 0.25rem;
+  color: var(--color-primary);
+  flex-shrink: 0;
+  margin-top: 0.25rem;
 }
 
 .tax-info p {
-    margin: 0;
-    color: var(--color-text-light);
-    font-size: 0.95rem;
+  margin: 0;
+  color: var(--color-text-light);
+  font-size: 0.95rem;
 }
 
 /* Impact Section */
 .impact-section {
-    padding: 6rem 0;
-    background: var(--color-bg);
+  padding: 6rem 0;
+  background: var(--color-bg);
 }
 
 .section-title {
-    text-align: center;
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
 }
 
 .impact-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 2rem;
-    margin-top: 3rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
 }
 
 .impact-card {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: 2rem;
-    text-align: center;
-    transition: var(--transition);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  text-align: center;
+  transition: var(--transition);
 }
 
 .impact-card:hover {
-    border-color: var(--color-primary);
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-green);
+  border-color: var(--color-primary);
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-green);
 }
 
 .impact-icon {
-    width: 60px;
-    height: 60px;
-    margin: 0 auto 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 230, 118, 0.1);
-    border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 230, 118, 0.1);
+  border-radius: 50%;
 }
 
 .impact-icon i {
-    color: var(--color-primary);
-    width: 30px;
-    height: 30px;
+  color: var(--color-primary);
+  width: 30px;
+  height: 30px;
 }
 
 .impact-card h3 {
-    font-size: 2rem;
-    color: var(--color-primary);
-    margin-bottom: 1rem;
+  font-size: 2rem;
+  color: var(--color-primary);
+  margin-bottom: 1rem;
 }
 
 .impact-card p {
-    color: var(--color-text-light);
-    line-height: 1.6;
+  color: var(--color-text-light);
+  line-height: 1.6;
 }
 
 /* Testimonials */
 .testimonials-section {
-    padding: 6rem 0;
-    background: var(--color-bg-alt);
+  padding: 6rem 0;
+  background: var(--color-bg-alt);
 }
 
 .testimonials-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-    margin-top: 3rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
 }
 
 .testimonial-card {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: 2.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
 }
 
 .testimonial-text {
-    font-size: 1.1rem;
-    line-height: 1.8;
-    color: var(--color-text-light);
-    margin-bottom: 1.5rem;
-    font-style: italic;
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: var(--color-text-light);
+  margin-bottom: 1.5rem;
+  font-style: italic;
 }
 
 .testimonial-author {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .testimonial-author strong {
-    color: var(--color-text);
-    font-size: 1.1rem;
+  color: var(--color-text);
+  font-size: 1.1rem;
 }
 
 .testimonial-author span {
-    color: var(--color-text-light);
-    font-size: 0.9rem;
+  color: var(--color-text-light);
+  font-size: 0.9rem;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-    .donate-hero-content h1 {
-        font-size: 2.5rem;
-    }
+  .donate-hero-content h1 {
+    font-size: 2.5rem;
+  }
 
-    .hero-stats {
-        flex-direction: column;
-        gap: 2rem;
-    }
+  .hero-stats {
+    flex-direction: column;
+    gap: 2rem;
+  }
 
-    .amount-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+  .amount-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 
-    .donation-type {
-        flex-direction: column;
-        gap: 1rem;
-    }
+  .donation-type {
+    flex-direction: column;
+    gap: 1rem;
+  }
 
-    .donation-card {
-        padding: 2rem 1.5rem;
-    }
+  .donation-card {
+    padding: 2rem 1.5rem;
+  }
 }
 
 /* --- Staff Section (Static) --- */
 #staff {
-    width: 90%;
-    margin: 40px auto;
-    text-align: center;
+  width: 90%;
+  margin: 40px auto;
+  text-align: center;
 }
 
 #staff h2 {
-    margin-bottom: 20px;
-    font-size: 2em;
-    color: #333;
+  margin-bottom: 20px;
+  font-size: 2em;
+  color: #333;
 }
 
 .staff-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
 }
 
 .staff-card {
-    width: 250px;
-    background: #f9f9f9;
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    transition: transform 0.3s;
+  width: 250px;
+  background: #f9f9f9;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s;
 }
 
 .staff-card:hover {
-    transform: translateY(-5px);
+  transform: translateY(-5px);
 }
 
 .staff-card img {
-    width: 100%;
-    height: 250px;
-    object-fit: cover;
-    border-radius: 10px;
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  border-radius: 10px;
 }
 
 .staff-card h3 {
-    margin: 10px 0 5px;
-    font-size: 1.2em;
-    color: #222;
+  margin: 10px 0 5px;
+  font-size: 1.2em;
+  color: #222;
 }
 
 .staff-card .role {
-    font-weight: bold;
-    color: #555;
-    margin-bottom: 10px;
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 10px;
 }
 
 .staff-card .about {
-    font-size: 0.9em;
-    color: #666;
+  font-size: 0.9em;
+  color: #666;
+}
+
+/* Checkout Status Spinner */
+.status-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 230, 118, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--color-primary);
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+#stk-status {
+  padding: 0.5rem;
+  background: rgba(0, 230, 118, 0.05);
+  border-radius: 4px;
+  border: 1px solid rgba(0, 230, 118, 0.1);
+}
+
+.checkout-card input[disabled] {
+  opacity: 0.7;
+  cursor: not-allowed;
 }

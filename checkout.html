@@ -113,6 +113,14 @@
                                 <input type="tel" id="mpesa-phone" placeholder="07XX XXX XXX" value="">
                                 <small style="color: #666;">Enter the number to receive the payment prompt (STK
                                     Push).</small>
+                                <button id="btn-stk-push" class="btn-primary mt-1"
+                                    style="width: 100%; height: 40px; font-size: 0.9rem;">
+                                    <i data-feather="smartphone"></i> Send Payment Prompt
+                                </button>
+                                <div id="stk-status" style="margin-top: 0.5rem; font-size: 0.85rem; display: none;">
+                                    <span class="status-spinner"></span> <span id="stk-status-text">Sending
+                                        prompt...</span>
+                                </div>
                             </div>
                         </div>
 
