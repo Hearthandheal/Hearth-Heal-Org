@@ -133,13 +133,10 @@
                 return;
             }
 
-            btn.innerText = "Sending...";
             btn.disabled = true;
+            btn.innerText = "Sending...";
 
             const res = await Auth.requestSignupVerification(email);
-
-            btn.innerText = "Send Verification Code";
-            btn.disabled = false;
 
             if (res.success) {
                 document.querySelector('.step-1').style.display = 'none';
@@ -149,7 +146,32 @@
             } else {
                 errorDiv.innerText = res.message;
                 errorDiv.style.display = 'block';
+
+                // If it's a cooldown error (429), start a local timer to match
+                if (res.message.toLowerCase().includes("wait")) {
+                    startCooldown(60);
+                } else {
+                    btn.innerText = "Send Verification Code";
+                    btn.disabled = false;
+                }
             }
+        }
+
+        function startCooldown(seconds) {
+            const btn = document.getElementById('btn-request');
+            btn.disabled = true;
+            let remaining = seconds;
+
+            const interval = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(interval);
+                    btn.disabled = false;
+                    btn.innerText = "Send Verification Code";
+                } else {
+                    btn.innerText = `Resend in ${remaining}s`;
+                }
+            }, 1000);
         }
 
         document.getElementById('signupForm').addEventListener('submit', async (e) => {

@@ -178,8 +178,8 @@
                 return;
             }
 
-            btn.innerText = "Checking...";
             btn.disabled = true;
+            btn.innerText = "Checking...";
 
             let result;
             if (loginMode === 'password') {
@@ -188,9 +188,6 @@
                 result = await Auth.requestOTP(email, 'email');
             }
 
-            btn.innerText = "Continue";
-            btn.disabled = false;
-
             if (result.success) {
                 document.querySelector('.main-step').style.display = 'none';
                 document.querySelector('.otp-step').style.display = 'block';
@@ -198,8 +195,31 @@
             } else {
                 errorDiv.innerText = result.message || "Login failed";
                 errorDiv.style.display = 'block';
+
+                if (result.message && result.message.toLowerCase().includes("wait")) {
+                    startCooldown(60);
+                } else {
+                    btn.innerText = "Continue";
+                    btn.disabled = false;
+                }
             }
         });
+
+        function startCooldown(seconds) {
+            const btn = document.getElementById('btn-login');
+            btn.disabled = true;
+            let remaining = seconds;
+            const interval = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(interval);
+                    btn.disabled = false;
+                    btn.innerText = "Continue";
+                } else {
+                    btn.innerText = `Resend in ${remaining}s`;
+                }
+            }, 1000);
+        }
 
         async function verify2FA() {
             const code = document.getElementById('otp-code').value;

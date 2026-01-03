@@ -158,13 +158,18 @@ app.post("/request-verification", authLimiter, async (req, res) => {
             return res.status(400).json({ error: "Valid email required" });
         }
 
+        // Check 1-minute cooldown
+        const duration = 10 * 60 * 1000;
+        const recent = await db.query(`SELECT * FROM verifications WHERE identifier = ? AND (expires_at - ?) > ? ORDER BY expires_at DESC LIMIT 1`, [email, duration, Date.now() - 60000]);
+        if (recent[0]) return res.status(429).json({ error: "Please wait 1 minute before requesting another code." });
+
         const code = generateOtp();
         const ref = getUuid();
         const codeHash = bcrypt.hashSync(code, 8);
 
         await db.run(
             `INSERT INTO verifications (ref, code_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`,
-            [ref, codeHash, email, Date.now() + 10 * 60 * 1000]
+            [ref, codeHash, email, Date.now() + duration]
         );
 
         await sendEmail(email, "Verify Your Email", `Your code is ${code}. It expires in 10 minutes.`);
@@ -213,6 +218,10 @@ app.post("/login", authLimiter, async (req, res) => {
             return res.status(400).json({ error: "Invalid credentials" });
         }
 
+        // Check 1-minute cooldown for OTP
+        const recent = await db.query(`SELECT * FROM otps WHERE identifier = ? AND (expires_at - ?) > ? ORDER BY expires_at DESC LIMIT 1`, [email, ENV.OTP_EXPIRY_MS, Date.now() - 60000]);
+        if (recent[0]) return res.status(429).json({ error: "OTP already sent. Please wait 1 minute before requesting another." });
+
         const otp = generateOtp();
         const ref = getUuid();
         const otpHash = bcrypt.hashSync(otp, 8);
@@ -253,6 +262,9 @@ app.post(["/auth/otp/verify", "/verify-otp"], authLimiter, async (req, res) => {
 app.post(["/auth/otp/request", "/request-otp"], authLimiter, async (req, res) => {
     try {
         const { email } = req.body;
+        const recent = await db.query(`SELECT * FROM otps WHERE identifier = ? AND (expires_at - ?) > ? ORDER BY expires_at DESC LIMIT 1`, [email, ENV.OTP_EXPIRY_MS, Date.now() - 60000]);
+        if (recent[0]) return res.status(429).json({ error: "OTP already sent. Please wait 1 minute." });
+
         const otp = generateOtp();
         const ref = getUuid();
         const otpHash = bcrypt.hashSync(otp, 8);
@@ -275,13 +287,18 @@ app.post("/request-reset", resetLimiter, async (req, res) => {
             return res.json({ message: "If an account exists, a reset link was sent." });
         }
 
+        // Check 1-minute cooldown for Reset
+        const duration = 15 * 60 * 1000;
+        const recent = await db.query(`SELECT * FROM password_resets WHERE identifier = ? AND (expires_at - ?) > ? ORDER BY expires_at DESC LIMIT 1`, [email, duration, Date.now() - 60000]);
+        if (recent[0]) return res.status(429).json({ error: "Reset link already sent. Please wait 1 minute." });
+
         const token = crypto.randomBytes(20).toString("hex");
         const ref = getUuid();
         const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
         await db.run(
             `INSERT INTO password_resets (ref, token_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`,
-            [ref, tokenHash, email, Date.now() + 15 * 60 * 1000]
+            [ref, tokenHash, email, Date.now() + duration]
         );
 
         const resetLink = `${ENV.BASE_URL}/forgot-password.html?ref=${ref}&token=${token}`;
