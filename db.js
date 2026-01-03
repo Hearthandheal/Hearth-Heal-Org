@@ -87,6 +87,12 @@ const initDb = async () => {
             created_at TEXT,
             expires_at TEXT,
             paid_at TEXT
+        )`,
+        `CREATE TABLE IF NOT EXISTS password_resets (
+            ref TEXT PRIMARY KEY,
+            token_hash TEXT,
+            identifier TEXT,
+            expires_at BIGINT
         )`
     ];
 

@@ -223,12 +223,59 @@ app.post(["/auth/otp/request", "/request-otp"], authLimiter, async (req, res) =>
     try {
         const { email } = req.body;
         const otp = generateOtp();
-        const ref = crypto.randomUUID();
+        const ref = getUuid();
         const otpHash = bcrypt.hashSync(otp, 8);
         await db.run(`INSERT INTO otps (ref, otp_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`, [ref, otpHash, email, Date.now() + ENV.OTP_EXPIRY_MS]);
         await sendEmail(email, "Your OTP", `Your OTP is ${otp}`);
         res.json({ ref, message: "OTP sent" });
     } catch (err) { res.status(500).json({ error: "Failed" }); }
+});
+
+/* -------------------- Password Reset -------------------- */
+app.post("/request-reset", authLimiter, async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ error: "Email required" });
+
+        const users = await db.query(`SELECT * FROM users WHERE identifier = ? AND verified = TRUE`, [email]);
+        if (users.length === 0) return res.status(400).json({ error: "User not found or not verified" });
+
+        const token = crypto.randomBytes(20).toString("hex");
+        const ref = getUuid();
+        // We store the token directly for simplicity in this flow, or could hash it
+        await db.run(
+            `INSERT INTO password_resets (ref, token_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`,
+            [ref, token, email, Date.now() + 15 * 60 * 1000]
+        );
+
+        await sendEmail(email, "Password Reset", `Your reset code is: ${token}. It expires in 15 minutes.`);
+        res.json({ ref, message: "Reset code sent to email" });
+    } catch (err) {
+        logger.error("Reset request failed", { error: err.message });
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+app.post("/verify-reset", authLimiter, async (req, res) => {
+    try {
+        const { ref, token, newPassword } = req.body;
+        if (!ref || !token || !newPassword) return res.status(400).json({ error: "All fields required" });
+
+        const records = await db.query(`SELECT * FROM password_resets WHERE ref = ?`, [ref]);
+        const record = records[0];
+
+        if (!record || Date.now() > record.expires_at) return res.status(400).json({ error: "Invalid or expired code" });
+        if (record.token_hash !== token) return res.status(400).json({ error: "Invalid code" });
+
+        const passwordHash = bcrypt.hashSync(newPassword, 10);
+        await db.run(`UPDATE users SET password_hash = ? WHERE identifier = ?`, [passwordHash, record.identifier]);
+        await db.run(`DELETE FROM password_resets WHERE ref = ?`, [ref]);
+
+        res.json({ success: true, message: "Password reset successfully" });
+    } catch (err) {
+        logger.error("Password reset failed", { error: err.message });
+        res.status(500).json({ error: "Server error" });
+    }
 });
 
 /* ----------------------------- Invoice & Payments ----------------------- */

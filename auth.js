@@ -131,19 +131,35 @@ const Auth = {
         }
     },
 
-    // BACKWARD COMPATIBILITY / PASSWORDLESS REQUEST
-    requestOTP: async (identifier, type) => {
+    // PASSWORD RESET STEP 1
+    requestReset: async (email) => {
         try {
-            const response = await fetch(`${Auth.API_BASE}/request-otp`, {
+            const response = await fetch(`${Auth.API_BASE}/request-reset`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: identifier })
+                body: JSON.stringify({ email })
             });
             const data = await response.json();
             if (response.ok) {
-                Auth._loginRef = data.ref;
-                return { success: true, channel: 'email' };
+                Auth._resetRef = data.ref;
+                return { success: true };
             }
+            return { success: false, message: data.error };
+        } catch (err) {
+            return { success: false, message: 'Server unreachable' };
+        }
+    },
+
+    // PASSWORD RESET STEP 2
+    completeReset: async (token, newPassword) => {
+        try {
+            const response = await fetch(`${Auth.API_BASE}/verify-reset`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ref: Auth._resetRef, token, newPassword })
+            });
+            const data = await response.json();
+            if (response.ok) return { success: true };
             return { success: false, message: data.error };
         } catch (err) {
             return { success: false, message: 'Server unreachable' };
