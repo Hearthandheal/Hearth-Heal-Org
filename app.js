@@ -91,13 +91,11 @@ async function sendEmail(email, subject, text) {
     });
 
     try {
-        await transporter.verify(); // Test connection early
         await transporter.sendMail({
             from: `"Hearth & Heal" <${ENV.EMAIL_USER.trim()}>`,
             to: email,
             subject: subject,
             text: text,
-            // HTML version for better deliverability
             html: `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
                     <h2 style="color: #00E676;">Hearth & Heal</h2>
                     <p>${text.replace(/\n/g, '<br>')}</p>

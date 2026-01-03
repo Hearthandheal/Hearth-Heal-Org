@@ -164,6 +164,25 @@ const Auth = {
         } catch (err) {
             return { success: false, message: 'Server unreachable' };
         }
+    },
+
+    // OTP REQUEST (Direct)
+    requestOTP: async (identifier) => {
+        try {
+            const response = await fetch(`${Auth.API_BASE}/request-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: identifier })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                Auth._loginRef = data.ref;
+                return { success: true };
+            }
+            return { success: false, message: data.error };
+        } catch (err) {
+            return { success: false, message: 'Server unreachable' };
+        }
     }
 };
 
