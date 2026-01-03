@@ -18,54 +18,141 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: radial-gradient(circle at center, rgba(0, 230, 118, 0.05) 0%, #050505 70%);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d1a10 50%, #4a2a1a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ambient Orbs for warmth */
+        .auth-container::before {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(230, 81, 0, 0.15) 0%, transparent 70%);
+            top: -100px;
+            right: -100px;
+            filter: blur(50px);
+        }
+
+        .auth-container::after {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(100, 230, 118, 0.05) 0%, transparent 70%);
+            bottom: -50px;
+            left: -50px;
+            filter: blur(50px);
+        }
+
+        .character-element {
+            position: absolute;
+            bottom: -20px;
+            right: 20px;
+            width: 300px;
+            z-index: 10;
+            pointer-events: none;
+            animation: floating 4s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0);
+            }
+
+            50% {
+                transform: translateY(-15px) rotate(2deg);
+            }
         }
 
         .auth-card {
-            background: var(--color-surface);
+            background: rgba(15, 15, 15, 0.85);
+            backdrop-filter: blur(15px);
             padding: 3rem;
             border-radius: var(--radius-lg);
-            border: 1px solid var(--color-border);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             width: 100%;
             max-width: 450px;
-            box-shadow: var(--shadow-lg);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
             animation: fadeUp 0.8s ease-out;
+            position: relative;
+            z-index: 5;
+        }
+
+        .auth-logo {
+            width: 150px;
+            margin: 0 auto 1.5rem;
+            display: block;
         }
 
         .auth-header {
             text-align: center;
-            margin-bottom: 2.5rem;
+            margin-bottom: 2rem;
         }
 
         .auth-header h1 {
-            font-size: 2rem;
+            font-size: 2.2rem;
             margin-bottom: 0.5rem;
-            color: var(--color-primary);
+            background: linear-gradient(90deg, #fff, #ffab40);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+        }
+
+        .auth-header p {
+            color: #aaa;
+            font-size: 1rem;
         }
 
         .auth-btn {
             width: 100%;
             margin-top: 1rem;
+            background: linear-gradient(90deg, #00C853, #00E676);
+            border: none;
+            padding: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(0, 230, 118, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .auth-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 230, 118, 0.4);
         }
 
         .auth-links {
-            margin-top: 1.5rem;
+            margin-top: 2rem;
             text-align: center;
-            font-size: 0.9rem;
-            color: var(--color-text-light);
+            font-size: 0.95rem;
+            color: #888;
         }
 
         .auth-links a {
-            color: var(--color-primary);
+            color: #ffab40;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        .auth-links a:hover {
+            color: #ffd180;
             text-decoration: underline;
         }
 
         .error-msg {
-            color: #ff4444;
+            color: #ff5252;
             font-size: 0.9rem;
             margin-top: 1rem;
             text-align: center;
             display: none;
+            padding: 0.8rem;
+            background: rgba(255, 82, 82, 0.1);
+            border-radius: 8px;
         }
 
         .otp-step {
@@ -75,16 +162,47 @@
         .auth-tab {
             background: none;
             border: none;
-            padding: 0.5rem 1rem;
+            padding: 0.75rem 1.5rem;
             cursor: pointer;
-            font-weight: 600;
-            color: #888;
+            font-weight: 700;
+            color: #666;
             border-bottom: 2px solid transparent;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
         }
 
         .auth-tab.active {
-            color: var(--color-primary);
-            border-bottom-color: var(--color-primary);
+            color: #ffab40;
+            border-bottom-color: #ffab40;
+        }
+
+        input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.8rem 1rem;
+            border-radius: 10px;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #ffab40;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 4px rgba(255, 171, 64, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: #ffab40;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
         }
     </style>
 </head>
@@ -92,10 +210,16 @@
 <body>
 
     <div class="auth-container">
+        <!-- Floating Character -->
+        <img src="assets/olaf.jpg" alt="Cozy Character" class="character-element">
+
         <div class="auth-card">
+            <!-- Brand Logo -->
+            <img src="assets/logo.png" alt="Hearth & Heal Logo" class="auth-logo">
+
             <div class="auth-header">
-                <h1>Welcome Back</h1>
-                <p>Sign in with multi-factor security</p>
+                <h1>Welcome Home</h1>
+                <p>Enter your sanctuary</p>
             </div>
 
             <!-- Login Tabs -->
