@@ -75,24 +75,49 @@ function generateOtp() {
 
 async function sendEmail(email, subject, text) {
     if (!ENV.EMAIL_USER || !ENV.EMAIL_PASS) {
-        logger.warn("Email simulation mode active (credentials missing)", { to: email, subject, text });
-        // In simulation mode, we log the OTP/code so it can be seen in server logs
+        logger.warn("EMAIL_CREDENTIALS_MISSING: Simulation mode active.", { to: email });
         console.log(`\n--- [EMAIL SIMULATION] ---\nTo: ${email}\nSubject: ${subject}\nBody: ${text}\n--------------------------\n`);
         return;
     }
+
+    const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true, // Use SSL
+        auth: {
+            user: ENV.EMAIL_USER.trim(),
+            pass: ENV.EMAIL_PASS.trim()
+        }
+    });
+
     try {
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: { user: ENV.EMAIL_USER, pass: ENV.EMAIL_PASS }
-        });
+        await transporter.verify(); // Test connection early
         await transporter.sendMail({
-            from: `Hearth & Heal <${ENV.EMAIL_USER}>`,
-            to: email, subject, text
+            from: `"Hearth & Heal" <${ENV.EMAIL_USER.trim()}>`,
+            to: email,
+            subject: subject,
+            text: text,
+            // HTML version for better deliverability
+            html: `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
+                    <h2 style="color: #00E676;">Hearth & Heal</h2>
+                    <p>${text.replace(/\n/g, '<br>')}</p>
+                    <hr style="border: none; border-top: 1px solid #eee;">
+                    <small style="color: #888;">If you didn't request this, please ignore this email.</small>
+                   </div>`
         });
-        logger.info("Email sent successfully", { to: email, subject });
+        logger.info("EMAIL_SENT_SUCCESS", { to: email, subject });
     } catch (err) {
-        logger.error("Email send failed", { error: err.message, to: email });
-        throw new Error("Email service failed. Please contact support.");
+        logger.error("EMAIL_SEND_FAILURE", {
+            error: err.message,
+            code: err.code,
+            command: err.command,
+            to: email
+        });
+        // If it's an auth error, we want to know
+        if (err.message.includes("Invalid login")) {
+            logger.warn("DANGER: Gmail SMTP authentication failed. Check your App Password.");
+        }
+        throw new Error("Email delivery failed. Our team has been notified.");
     }
 }
 
