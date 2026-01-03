@@ -118,6 +118,12 @@ const authLimiter = rateLimit({
     message: { error: "Too many attempts. Please try again later." }
 });
 
+const resetLimiter = rateLimit({
+    windowMs: 60 * 1000 * 60, // 1 hour
+    max: 5,
+    message: { error: "Too many reset requests. Please try again in an hour." }
+});
+
 /* ----------------------------- Auth API ----------------------------- */
 
 app.post("/request-verification", authLimiter, async (req, res) => {
@@ -232,24 +238,37 @@ app.post(["/auth/otp/request", "/request-otp"], authLimiter, async (req, res) =>
 });
 
 /* -------------------- Password Reset -------------------- */
-app.post("/request-reset", authLimiter, async (req, res) => {
+app.post("/request-reset", resetLimiter, async (req, res) => {
     try {
         const { email } = req.body;
         if (!email) return res.status(400).json({ error: "Email required" });
 
         const users = await db.query(`SELECT * FROM users WHERE identifier = ? AND verified = TRUE`, [email]);
-        if (users.length === 0) return res.status(400).json({ error: "User not found or not verified" });
+        if (users.length === 0) {
+            // Audit failed attempt but return success to prevent user enumeration
+            audit("PASSWORD_RESET_REQUEST_FAILED", { email, reason: "NOT_FOUND" });
+            return res.json({ message: "If an account exists, a reset link was sent." });
+        }
 
         const token = crypto.randomBytes(20).toString("hex");
         const ref = getUuid();
-        // We store the token directly for simplicity in this flow, or could hash it
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
         await db.run(
             `INSERT INTO password_resets (ref, token_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`,
-            [ref, token, email, Date.now() + 15 * 60 * 1000]
+            [ref, tokenHash, email, Date.now() + 15 * 60 * 1000]
         );
 
-        await sendEmail(email, "Password Reset", `Your reset code is: ${token}. It expires in 15 minutes.`);
-        res.json({ ref, message: "Reset code sent to email" });
+        const resetLink = `${ENV.BASE_URL}/forgot-password.html?ref=${ref}&token=${token}`;
+        const emailBody = `A password reset was requested for your account.\n\n` +
+            `Click here to reset: ${resetLink}\n\n` +
+            `Or use this code: ${token}\n\n` +
+            `This link expires in 15 minutes. If you did not request this, please ignore this email.`;
+
+        await sendEmail(email, "Password Reset Request", emailBody);
+        audit("PASSWORD_RESET_REQUESTED", { email, ref });
+
+        res.json({ ref, message: "Reset link sent to email" });
     } catch (err) {
         logger.error("Reset request failed", { error: err.message });
         res.status(500).json({ error: "Server error" });
@@ -261,16 +280,27 @@ app.post("/verify-reset", authLimiter, async (req, res) => {
         const { ref, token, newPassword } = req.body;
         if (!ref || !token || !newPassword) return res.status(400).json({ error: "All fields required" });
 
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
         const records = await db.query(`SELECT * FROM password_resets WHERE ref = ?`, [ref]);
         const record = records[0];
 
-        if (!record || Date.now() > record.expires_at) return res.status(400).json({ error: "Invalid or expired code" });
-        if (record.token_hash !== token) return res.status(400).json({ error: "Invalid code" });
+        if (!record || Date.now() > record.expires_at) {
+            audit("PASSWORD_RESET_FAILED", { ref, reason: "EXPIRED_OR_INVALID" });
+            return res.status(400).json({ error: "Invalid or expired link" });
+        }
+
+        if (record.token_hash !== tokenHash) {
+            audit("PASSWORD_RESET_FAILED", { ref, reason: "TOKEN_MISMATCH" });
+            return res.status(400).json({ error: "Invalid reset token" });
+        }
+
+        if (newPassword.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
 
         const passwordHash = bcrypt.hashSync(newPassword, 10);
         await db.run(`UPDATE users SET password_hash = ? WHERE identifier = ?`, [passwordHash, record.identifier]);
         await db.run(`DELETE FROM password_resets WHERE ref = ?`, [ref]);
 
+        audit("PASSWORD_RESET_SUCCESS", { email: record.identifier });
         res.json({ success: true, message: "Password reset successfully" });
     } catch (err) {
         logger.error("Password reset failed", { error: err.message });
