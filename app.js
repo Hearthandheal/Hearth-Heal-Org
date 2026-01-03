@@ -17,6 +17,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const db = require("./db");
 
+const path = require("path");
+
 const app = express();
 
 /* ----------------------------- Logging setup ----------------------------- */
@@ -30,9 +32,22 @@ const logger = winston.createLogger({
 });
 
 /* ----------------------------- Security setup ---------------------------- */
-app.use(helmet());
+// Configure Helmet to allow Google Fonts and scripts needed for the frontend
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            "default-src": ["'self'"],
+            "script-src": ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+            "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            "font-src": ["'self'", "https://fonts.gstatic.com"],
+            "img-src": ["'self'", "data:", "https:*"],
+            "connect-src": ["'self'", "https://hearth-heal-org.onrender.com", "http://localhost:3000"]
+        },
+    }
+}));
 app.use(cors({ origin: true }));
 app.use(express.json({ limit: "1mb" }));
+app.use(express.static(path.join(__dirname))); // Serve static frontend files
 app.disable("x-powered-by");
 
 const limiter = rateLimit({
