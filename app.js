@@ -112,9 +112,12 @@ const transporter = nodemailer.createTransport({
 
 // Send email function
 async function sendEmail(to, subject, text) {
+    // Always log to console for development/debugging
+    logger.info("EMAIL_ATTEMPT", { to, subject });
+    console.log(`\n=== [EMAIL DEBUG] ===\nTo: ${to}\nSubject: ${subject}\nBody: ${text}\n====================\n`);
+
     if (!ENV.EMAIL_USER || !ENV.EMAIL_PASS) {
         logger.warn("EMAIL_CREDENTIALS_MISSING: Simulation mode active.", { to });
-        console.log(`\n--- [EMAIL SIMULATION] ---\nTo: ${to}\nSubject: ${subject}\nBody: ${text}\n--------------------------\n`);
         return;
     }
 
@@ -134,7 +137,8 @@ async function sendEmail(to, subject, text) {
         logger.info("EMAIL_SENT_SUCCESS", { to });
     } catch (err) {
         logger.error("EMAIL_SEND_FAILURE", { error: err.message, to });
-        throw new Error("Email service temporarily unavailable. Please try again later.");
+        // Don't throw error - allow signup/login to continue
+        logger.warn("EMAIL_FAILED_BUT_CONTINUING", { to, codeInLogs: true });
     }
 }
 
