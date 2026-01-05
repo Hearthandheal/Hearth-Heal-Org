@@ -90,12 +90,24 @@ function generateOtp() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+
 const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false, // Use STARTTLS
     auth: {
         user: ENV.EMAIL_USER,
         pass: ENV.EMAIL_PASS
-    }
+    },
+    tls: {
+        rejectUnauthorized: false
+    },
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100
 });
 
 // Send email function
