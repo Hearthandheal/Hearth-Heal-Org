@@ -21,7 +21,7 @@ const path = require("path");
 
 const app = express();
 
-/* ----------------------------- Logging setup ----------------------------- */
+app.get("/health", (req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
 const logger = winston.createLogger({
     level: "info",
     format: winston.format.combine(
@@ -115,22 +115,13 @@ async function sendEmail(email, subject, text) {
                     <h2 style="color: #00E676;">Hearth & Heal</h2>
                     <p>${text.replace(/\n/g, '<br>')}</p>
                     <hr style="border: none; border-top: 1px solid #eee;">
-                    <small style="color: #888;">If you didn't request this, please ignore this email.</small>
+                    <p style="font-size: 12px; color: #888;">If you didn't request this, please ignore this email.</p>
                    </div>`
         });
-        logger.info("EMAIL_SENT_SUCCESS", { to: email, subject });
+        logger.info("EMAIL_SENT_SUCCESS", { to: email });
     } catch (err) {
-        logger.error("EMAIL_SEND_FAILURE", {
-            error: err.message,
-            code: err.code,
-            command: err.command,
-            to: email
-        });
-        // If it's an auth error, we want to know
-        if (err.message.includes("Invalid login")) {
-            logger.warn("DANGER: Gmail SMTP authentication failed. Check your App Password.");
-        }
-        throw new Error("Email delivery failed. Our team has been notified.");
+        logger.error("EMAIL_SEND_FAILURE", { error: err.message, to: email });
+        throw new Error("Email service temporarily unavailable. Please try again later.");
     }
 }
 
@@ -173,7 +164,7 @@ app.post("/request-verification", authLimiter, async (req, res) => {
 
         // Check 1-minute cooldown
         const duration = 10 * 60 * 1000;
-        const recent = await db.query(`SELECT * FROM verifications WHERE identifier = ? AND (expires_at - ?) > ? ORDER BY expires_at DESC LIMIT 1`, [email, duration, Date.now() - 60000]);
+        const recent = await db.query(`SELECT * FROM verifications WHERE identifier = ? AND expires_at > ? ORDER BY expires_at DESC LIMIT 1`, [email, Date.now() + duration - 60000]);
         if (recent[0]) return res.status(429).json({ error: "Please wait 1 minute before requesting another code." });
 
         const code = generateOtp();
@@ -188,8 +179,8 @@ app.post("/request-verification", authLimiter, async (req, res) => {
         await sendEmail(email, "Verify Your Email", `Your code is ${code}. It expires in 10 minutes.`);
         res.json({ ref, message: "Verification code sent" });
     } catch (err) {
-        logger.error("Signup request failed", { error: err.message, stack: err.stack });
-        res.status(500).json({ error: "Server error" });
+        logger.error("Signup request failed", { error: err.message });
+        res.status(500).json({ error: err.message || "Server error" });
     }
 });
 
@@ -212,8 +203,8 @@ app.post("/verify-email", authLimiter, async (req, res) => {
 
         res.json({ success: true, message: "Account created" });
     } catch (err) {
-        logger.error({ err });
-        res.status(500).json({ error: "Server error" });
+        logger.error("Verify email failed", { error: err.message });
+        res.status(500).json({ error: err.message || "Server error" });
     }
 });
 
@@ -247,8 +238,8 @@ app.post("/login", authLimiter, async (req, res) => {
         await sendEmail(email, "Login OTP", `Your OTP is ${otp}. Expires in 5 minutes.`);
         res.json({ ref, message: "OTP sent" });
     } catch (err) {
-        logger.error("Login attempt failed", { error: err.message, stack: err.stack });
-        res.status(500).json({ error: "Server error" });
+        logger.error("Login attempt failed", { error: err.message });
+        res.status(500).json({ error: err.message || "Server error" });
     }
 });
 
