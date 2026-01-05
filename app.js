@@ -12,7 +12,7 @@ const cors = require("cors");
 const crypto = require("crypto");
 const cron = require("node-cron");
 const winston = require("winston");
-const nodemailer = require("nodemailer");
+const sgMail = require("@sendgrid/mail");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const db = require("./db");
@@ -68,13 +68,17 @@ db.initDb()
 const ENV = {
     PORT: process.env.PORT || 3000,
     BASE_URL: process.env.BASE_URL || "http://localhost:3000",
-    EMAIL_USER: process.env.EMAIL_USER,
-    EMAIL_PASS: process.env.EMAIL_PASS,
-    EMAIL_FROM: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
+    EMAIL_FROM: process.env.EMAIL_FROM || "noreply@hearthandheal.org",
     JWT_SECRETS: (process.env.JWT_SECRET || "default_h&h_secret").split(","),
     OTP_EXPIRY_MS: 5 * 60 * 1000,
     WEBHOOK_SHARED_SECRET: process.env.WEBHOOK_SHARED_SECRET || "change_me"
 };
+
+// Initialize SendGrid
+if (ENV.SENDGRID_API_KEY) {
+    sgMail.setApiKey(ENV.SENDGRID_API_KEY);
+}
 
 function now() { return new Date().toISOString(); }
 
@@ -90,25 +94,7 @@ function generateOtp() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false, // Use STARTTLS
-    auth: {
-        user: ENV.EMAIL_USER,
-        pass: ENV.EMAIL_PASS
-    },
-    tls: {
-        rejectUnauthorized: false
-    },
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
-    pool: true,
-    maxConnections: 5,
-    maxMessages: 100
-});
+// SendGrid email sending (transporter not needed)
 
 // Send email function
 async function sendEmail(to, subject, text) {
@@ -116,27 +102,29 @@ async function sendEmail(to, subject, text) {
     logger.info("EMAIL_ATTEMPT", { to, subject });
     console.log(`\n=== [EMAIL DEBUG] ===\nTo: ${to}\nSubject: ${subject}\nBody: ${text}\n====================\n`);
 
-    if (!ENV.EMAIL_USER || !ENV.EMAIL_PASS) {
-        logger.warn("EMAIL_CREDENTIALS_MISSING: Simulation mode active.", { to });
+    if (!ENV.SENDGRID_API_KEY) {
+        logger.warn("SENDGRID_API_KEY_MISSING: Simulation mode active.", { to });
         return;
     }
 
+    const msg = {
+        to,
+        from: ENV.EMAIL_FROM,
+        subject,
+        text,
+        html: `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
+                <h2 style="color: #00E676;">Hearth & Heal</h2>
+                <p>${text.replace(/\n/g, '<br>')}</p>
+                <hr style="border: none; border-top: 1px solid #eee;">
+                <p style="font-size: 12px; color: #888;">If you didn't request this, please ignore this email.</p>
+               </div>`
+    };
+
     try {
-        await transporter.sendMail({
-            from: ENV.EMAIL_FROM,
-            to,
-            subject,
-            text,
-            html: `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
-                    <h2 style="color: #00E676;">Hearth & Heal</h2>
-                    <p>${text.replace(/\n/g, '<br>')}</p>
-                    <hr style="border: none; border-top: 1px solid #eee;">
-                    <p style="font-size: 12px; color: #888;">If you didn't request this, please ignore this email.</p>
-                   </div>`
-        });
-        logger.info("EMAIL_SENT_SUCCESS", { to });
+        await sgMail.send(msg);
+        logger.info("EMAIL_SENT_SUCCESS", { to, provider: "SendGrid" });
     } catch (err) {
-        logger.error("EMAIL_SEND_FAILURE", { error: err.message, to });
+        logger.error("EMAIL_SEND_FAILURE", { error: err.message, to, provider: "SendGrid", code: err.code });
         // Don't throw error - allow signup/login to continue
         logger.warn("EMAIL_FAILED_BUT_CONTINUING", { to, codeInLogs: true });
     }
