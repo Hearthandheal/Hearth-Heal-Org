@@ -4,7 +4,8 @@
  */
 
 const Auth = {
-    API_BASE: 'https://hearth-heal-org.onrender.com',
+    // Relative path works both locally and in production
+    API_BASE: '',
     CURRENT_USER_KEY: 'hearth_current_user',
     JWT_KEY: 'hearth_jwt_token',
 
@@ -169,7 +170,7 @@ const Auth = {
     // OTP REQUEST (Direct)
     requestOTP: async (identifier) => {
         try {
-            const response = await fetch(`${Auth.API_BASE}/request-otp`, {
+            const response = await fetch(`${Auth.API_BASE}/login/request`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: identifier })
@@ -177,6 +178,8 @@ const Auth = {
             const data = await response.json();
             if (response.ok) {
                 Auth._loginRef = data.ref;
+                // For development, you can see the code in the response
+                if (data.code) console.log("Development OTP Code:", data.code);
                 return { success: true };
             }
             return { success: false, message: data.error };
