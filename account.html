@@ -64,6 +64,9 @@
                         <a href="#profile-section" class="account-nav-btn">
                             <i data-feather="user"></i> Profile
                         </a>
+                        <a href="#orders-section" class="account-nav-btn">
+                            <i data-feather="shopping-bag"></i> Orders
+                        </a>
                         <a href="#security-section" class="account-nav-btn">
                             <i data-feather="shield"></i> Security
                         </a>
@@ -100,6 +103,42 @@
                             </div>
                             <button type="submit" class="btn btn-primary">Save Changes</button>
                         </form>
+                    </div>
+
+                    <hr class="divider">
+
+                    <!-- Orders Section -->
+                    <div id="orders-section" class="account-section">
+                        <h2 class="section-title">My Orders</h2>
+
+                        <!-- Quick Cart Summary -->
+                        <div class="cart-summary-card"
+                            style="background: linear-gradient(135deg, #00E676 0%, #00C853 100%); color: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <h3 style="margin: 0; font-size: 1.2rem;">Current Cart</h3>
+                                    <p style="margin: 0.5rem 0 0 0; opacity: 0.9;" id="cart-item-count">0 items</p>
+                                </div>
+                                <div style="text-align: right;">
+                                    <p style="margin: 0; font-size: 1.8rem; font-weight: 700;" id="cart-total-display">
+                                        $0.00</p>
+                                    <a href="cart.html" class="btn"
+                                        style="background: white; color: #00C853; margin-top: 0.5rem; padding: 0.5rem 1rem; font-size: 0.9rem;">View
+                                        Cart</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Order History -->
+                        <h3 style="margin-bottom: 1rem; color: #333;">Order History</h3>
+                        <div id="orders-list">
+                            <div class="empty-state" style="text-align: center; padding: 3rem; color: #888;">
+                                <i data-feather="package"
+                                    style="width: 64px; height: 64px; margin-bottom: 1rem; opacity: 0.3;"></i>
+                                <p>No orders yet. Start shopping to see your order history here!</p>
+                                <a href="shop.html" class="btn btn-primary" style="margin-top: 1rem;">Browse Shop</a>
+                            </div>
+                        </div>
                     </div>
 
                     <hr class="divider">
@@ -217,6 +256,21 @@
             document.getElementById('profile-email').value = user.email;
             document.getElementById('profile-name').value = user.name || '';
             document.getElementById('profile-bio').value = user.bio || '';
+
+            // Load cart data
+            loadCartSummary();
+        }
+
+        function loadCartSummary() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+            document.getElementById('cart-item-count').textContent = `${itemCount} item${itemCount !== 1 ? 's' : ''}`;
+            document.getElementById('cart-total-display').textContent = `$${total.toFixed(2)}`;
+
+            // Update feather icons
+            setTimeout(() => feather.replace(), 100);
         }
 
         function handleProfileUpdate(e) {
