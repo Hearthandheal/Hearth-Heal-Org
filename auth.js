@@ -18,11 +18,16 @@ const Auth = {
         const authPages = ['login.html', 'signup.html', 'forgot-password.html'];
 
         if (currentUser) {
+            // Logged in users: redirect away from auth pages to home
             if (authPages.includes(pageName)) {
                 window.location.href = 'index.html';
             }
             Auth.updateUI(true);
         } else {
+            // Not logged in: redirect to login unless already on an auth page
+            if (!authPages.includes(pageName)) {
+                window.location.href = 'login.html';
+            }
             Auth.updateUI(false);
         }
     },
