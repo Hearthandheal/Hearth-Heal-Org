@@ -69,6 +69,7 @@ const ENV = {
     BASE_URL: process.env.BASE_URL || "http://localhost:3000",
     EMAIL_USER: process.env.EMAIL_USER,
     EMAIL_PASS: process.env.EMAIL_PASS,
+    EMAIL_FROM: process.env.EMAIL_FROM || process.env.EMAIL_USER,
     JWT_SECRETS: (process.env.JWT_SECRET || "default_h&h_secret").split(","),
     OTP_EXPIRY_MS: 5 * 60 * 1000,
     WEBHOOK_SHARED_SECRET: process.env.WEBHOOK_SHARED_SECRET || "change_me"
@@ -88,29 +89,28 @@ function generateOtp() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-async function sendEmail(email, subject, text) {
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: ENV.EMAIL_USER,
+        pass: ENV.EMAIL_PASS
+    }
+});
+
+// Send email function
+async function sendEmail(to, subject, text) {
     if (!ENV.EMAIL_USER || !ENV.EMAIL_PASS) {
-        logger.warn("EMAIL_CREDENTIALS_MISSING: Simulation mode active.", { to: email });
-        console.log(`\n--- [EMAIL SIMULATION] ---\nTo: ${email}\nSubject: ${subject}\nBody: ${text}\n--------------------------\n`);
+        logger.warn("EMAIL_CREDENTIALS_MISSING: Simulation mode active.", { to });
+        console.log(`\n--- [EMAIL SIMULATION] ---\nTo: ${to}\nSubject: ${subject}\nBody: ${text}\n--------------------------\n`);
         return;
     }
 
-    const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 587,
-        secure: false, // Use STARTTLS
-        auth: {
-            user: ENV.EMAIL_USER.trim(),
-            pass: ENV.EMAIL_PASS.trim()
-        }
-    });
-
     try {
         await transporter.sendMail({
-            from: `"Hearth & Heal" <${ENV.EMAIL_USER.trim()}>`,
-            to: email,
-            subject: subject,
-            text: text,
+            from: ENV.EMAIL_FROM,
+            to,
+            subject,
+            text,
             html: `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
                     <h2 style="color: #00E676;">Hearth & Heal</h2>
                     <p>${text.replace(/\n/g, '<br>')}</p>
@@ -118,9 +118,9 @@ async function sendEmail(email, subject, text) {
                     <p style="font-size: 12px; color: #888;">If you didn't request this, please ignore this email.</p>
                    </div>`
         });
-        logger.info("EMAIL_SENT_SUCCESS", { to: email });
+        logger.info("EMAIL_SENT_SUCCESS", { to });
     } catch (err) {
-        logger.error("EMAIL_SEND_FAILURE", { error: err.message, to: email });
+        logger.error("EMAIL_SEND_FAILURE", { error: err.message, to });
         throw new Error("Email service temporarily unavailable. Please try again later.");
     }
 }
