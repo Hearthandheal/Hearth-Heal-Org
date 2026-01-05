@@ -135,7 +135,7 @@ const Auth = {
     // PASSWORD RESET STEP 1
     requestReset: async (email) => {
         try {
-            const response = await fetch(`${Auth.API_BASE}/request-reset`, {
+            const response = await fetch(`${Auth.API_BASE}/reset/request`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
@@ -154,7 +154,7 @@ const Auth = {
     // PASSWORD RESET STEP 2
     completeReset: async (token, newPassword) => {
         try {
-            const response = await fetch(`${Auth.API_BASE}/verify-reset`, {
+            const response = await fetch(`${Auth.API_BASE}/reset/verify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ref: Auth._resetRef, token, newPassword })

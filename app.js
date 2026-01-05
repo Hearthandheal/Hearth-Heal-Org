@@ -306,7 +306,8 @@ app.post(["/auth/otp/request", "/request-otp"], authLimiter, async (req, res) =>
 });
 
 /* -------------------- Password Reset -------------------- */
-app.post("/request-reset", resetLimiter, async (req, res) => {
+// STEP 1: Request reset code
+app.post(["/reset/request", "/request-reset"], resetLimiter, async (req, res) => {
     try {
         const { email } = req.body;
         if (!email) return res.status(400).json({ error: "Email required" });
@@ -323,51 +324,54 @@ app.post("/request-reset", resetLimiter, async (req, res) => {
         const recent = await db.query(`SELECT * FROM password_resets WHERE identifier = ? AND (expires_at - ?) > ? ORDER BY expires_at DESC LIMIT 1`, [email, duration, Date.now() - 60000]);
         if (recent[0]) return res.status(429).json({ error: "Reset link already sent. Please wait 1 minute." });
 
-        const token = crypto.randomBytes(20).toString("hex");
+        const code = generateOtp();
         const ref = getUuid();
-        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+        const codeHash = crypto.createHash('sha256').update(code).digest('hex');
 
         await db.run(
             `INSERT INTO password_resets (ref, token_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`,
-            [ref, tokenHash, email, Date.now() + duration]
+            [ref, codeHash, email, Date.now() + duration]
         );
 
-        const resetLink = `${ENV.BASE_URL}/forgot-password.html?ref=${ref}&token=${token}`;
+        const resetLink = `${ENV.BASE_URL}/forgot-password.html?ref=${ref}&token=${code}`;
         const emailBody = `A password reset was requested for your account.\n\n` +
             `Click here to reset: ${resetLink}\n\n` +
-            `Or use this code: ${token}\n\n` +
-            `This link expires in 15 minutes. If you did not request this, please ignore this email.`;
+            `Or use this reset code: ${code}\n\n` +
+            `This code expires in 15 minutes. If you did not request this, please ignore this email.`;
 
-        await sendEmail(email, "Password Reset Request", emailBody);
+        await sendEmail(email, "Password Reset Code", emailBody);
         audit("PASSWORD_RESET_REQUESTED", { email, ref });
 
-        res.json({ ref, message: "Reset link sent to email" });
+        res.json({ ref, message: "Reset code sent to email" });
     } catch (err) {
         logger.error("Reset request failed", { error: err.message });
         res.status(500).json({ error: "Server error" });
     }
 });
 
-app.post("/verify-reset", authLimiter, async (req, res) => {
+// STEP 2: Verify code and reset password
+app.post(["/reset/verify", "/verify-reset"], authLimiter, async (req, res) => {
     try {
-        const { ref, token, newPassword } = req.body;
-        if (!ref || !token || !newPassword) return res.status(400).json({ error: "All fields required" });
+        const { ref, token, code, newPassword } = req.body;
+        const resetCode = code || token;
 
-        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+        if (!ref || !resetCode || !newPassword) return res.status(400).json({ error: "Reference, code, and new password required" });
+
+        if (newPassword.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+
+        const codeHash = crypto.createHash('sha256').update(resetCode).digest('hex');
         const records = await db.query(`SELECT * FROM password_resets WHERE ref = ?`, [ref]);
         const record = records[0];
 
         if (!record || Date.now() > record.expires_at) {
             audit("PASSWORD_RESET_FAILED", { ref, reason: "EXPIRED_OR_INVALID" });
-            return res.status(400).json({ error: "Invalid or expired link" });
+            return res.status(400).json({ error: "Invalid or expired reset link" });
         }
 
-        if (record.token_hash !== tokenHash) {
-            audit("PASSWORD_RESET_FAILED", { ref, reason: "TOKEN_MISMATCH" });
-            return res.status(400).json({ error: "Invalid reset token" });
+        if (record.token_hash !== codeHash) {
+            audit("PASSWORD_RESET_FAILED", { ref, reason: "CODE_MISMATCH" });
+            return res.status(400).json({ error: "Invalid reset code" });
         }
-
-        if (newPassword.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
 
         const passwordHash = bcrypt.hashSync(newPassword, 10);
         await db.run(`UPDATE users SET password_hash = ? WHERE identifier = ?`, [passwordHash, record.identifier]);
@@ -376,7 +380,7 @@ app.post("/verify-reset", authLimiter, async (req, res) => {
         audit("PASSWORD_RESET_SUCCESS", { email: record.identifier });
         res.json({ success: true, message: "Password reset successfully" });
     } catch (err) {
-        logger.error("Password reset failed", { error: err.message });
+        logger.error("Reset verification failed", { error: err.message });
         res.status(500).json({ error: "Server error" });
     }
 });
