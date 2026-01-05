@@ -243,6 +243,32 @@ app.post("/login", authLimiter, async (req, res) => {
     }
 });
 
+// Request verification code (Unified pathway)
+app.post("/login/request", async (req, res) => {
+    const { email } = req.body;
+    const code = generateOtp();
+    const ref = getUuid();
+    const codeHash = bcrypt.hashSync(code, 8);
+
+    try {
+        // Save to DB so it can be verified via /verify-otp
+        await db.run(
+            `INSERT INTO otps (ref, otp_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`,
+            [ref, codeHash, email, Date.now() + 10 * 60 * 1000]
+        );
+
+        await sendEmail(email, "Hearth & Heal Login Code", `Your code is ${code}. Expires in 10 minutes.`);
+        res.json({
+            message: "Verification code sent to email",
+            code, // remove code in production! 
+            ref
+        });
+    } catch (err) {
+        logger.error("Login request failed", { error: err.message });
+        res.status(500).json({ error: "Failed to send email" });
+    }
+});
+
 app.post(["/auth/otp/verify", "/verify-otp"], authLimiter, async (req, res) => {
     try {
         const { ref, otp } = req.body;
