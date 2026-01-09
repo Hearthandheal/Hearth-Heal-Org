@@ -19,6 +19,7 @@
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.11.3",
     "better-sqlite3": "^9.2.2",
-    "@sendgrid/mail": "^7.7.0"
+    "@sendgrid/mail": "^7.7.0",
+    "axios": "^1.6.2"
   }
 }

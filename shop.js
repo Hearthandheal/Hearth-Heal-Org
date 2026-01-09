@@ -235,11 +235,30 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('click', (e) => {
                 const card = btn.closest('.product-card');
                 const title = card.querySelector('.product-title').innerText;
-                const price = card.querySelector('.product-price').innerText;
+                const price = card.querySelector('.product-price') ? card.querySelector('.product-price').innerText : card.querySelector('.price').innerText;
+                const imgEl = card.querySelector('img');
+                const imgSrc = imgEl ? imgEl.src : '';
+
                 const colorsRaw = card.dataset.colors || "";
                 const defaultColor = colorsRaw ? colorsRaw.split(',')[0].trim() : "";
+                const desc = card.dataset.description || "No description available.";
+                const category = card.dataset.category || "general";
 
-                addToCart({ title, price, qty: 1, size: 'M', color: defaultColor }); // Default values
+                // Default size/format logic
+                let defaultSize = 'M';
+                if (category === 'book') defaultSize = 'Hard Copy';
+                if (category === 'accessories') defaultSize = 'One Size';
+
+                addToCart({
+                    title,
+                    price,
+                    qty: 1,
+                    size: defaultSize,
+                    color: defaultColor,
+                    desc,
+                    category,
+                    imgSrc
+                });
 
                 // Visual Feedback
                 const original = btn.innerHTML;
@@ -267,16 +286,22 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             cart.forEach((item, index) => {
                 // Parse price "KSH 1000" -> 1000
-                const priceVal = parseFloat(item.price.replace('KSH ', ''));
+                const priceVal = parseFloat(item.price.replace(/[^0-9.]/g, ''));
                 const lineTotal = priceVal * parseInt(item.qty);
                 total += lineTotal;
 
                 const row = document.createElement('div');
                 row.className = 'cart-item-row';
                 row.innerHTML = `
-                    <div>
-                        <strong>${item.title}</strong><br>
-                        <small>${item.color ? item.color + ' | ' : ''}Size: ${item.size} | Qty: ${item.qty}</small>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        ${item.imgSrc ? `<img src="${item.imgSrc}" alt="${item.title}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">` : ''}
+                        <div>
+                            <strong>${item.title}</strong><br>
+                            <small class="text-muted">
+                                ${item.category === 'book' ? 'Format' : 'Size'}: ${item.size} 
+                                ${item.color ? '| Color: ' + item.color : ''}
+                            </small>
+                        </div>
                     </div>
                     <span>KSH ${lineTotal.toLocaleString()}</span>
                 `;
@@ -455,23 +480,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         cart.forEach((item, index) => {
-            const priceVal = parseFloat(item.price.replace('KSH ', ''));
+            const priceVal = parseFloat(item.price.replace(/[^0-9.]/g, ''));
             const qty = parseInt(item.qty);
             const lineTotal = priceVal * qty;
             total += lineTotal;
 
+            const variationLabel = item.category === 'book' ? 'Format' : 'Size';
+            const variationValue = item.size || 'Standard';
+
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>
-                    <div style="font-weight:600;">${item.title}</div>
-                    <div style="font-size:0.85rem; color:#666;">${item.color ? item.color + ' | ' : ''}${item.size || 'Std'}</div>
+                <td style="display: flex; gap: 1rem; align-items: start;">
+                    ${item.imgSrc ? `<img src="${item.imgSrc}" alt="${item.title}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">` : ''}
+                    <div>
+                        <div style="font-weight:700; font-size: 1.1rem; margin-bottom: 0.25rem;">${item.title}</div>
+                        <div style="font-size:0.9rem; color:#666; margin-bottom: 0.5rem; line-height: 1.4; max-width: 300px;">
+                            ${item.desc || 'No description available'}
+                        </div>
+                        <div style="font-size:0.8rem; color:#888; background: rgba(0,0,0,0.05); display: inline-block; padding: 2px 8px; border-radius: 4px;">
+                            <span style="font-weight: 600; color: #333;">${variationLabel}:</span> ${variationValue}
+                            ${item.color ? `<span style="margin-left:8px; border-left:1px solid #ccc; padding-left:8px;"><span style="font-weight: 600; color: #333;">Color:</span> ${item.color}</span>` : ''}
+                        </div>
+                    </div>
                 </td>
-                <td>${item.price}</td>
-                <td>
-                    <input type="number" value="${qty}" min="1" max="20" data-index="${index}" class="cart-qty-input">
+                <td style="vertical-align: top; padding-top: 1rem;">${item.price}</td>
+                <td style="vertical-align: top; padding-top: 1rem;">
+                    <input type="number" value="${qty}" min="1" max="20" data-index="${index}" class="cart-qty-input" style="width: 60px; padding: 5px;">
                 </td>
-                <td>KSH ${lineTotal.toLocaleString()}</td>
-                <td><button class="btn-remove" data-index="${index}">Remove</button></td>
+                <td style="vertical-align: top; padding-top: 1rem; font-weight: 600;">KSH ${lineTotal.toLocaleString()}</td>
+                <td style="vertical-align: top; padding-top: 1rem;"><button class="btn-remove" data-index="${index}" style="color: red; background: none; border: none; cursor: pointer; text-decoration: underline;">Remove</button></td>
             `;
             cartBody.appendChild(row);
         });
