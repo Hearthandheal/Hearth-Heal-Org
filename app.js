@@ -483,7 +483,7 @@ app.post("/payments", async (req, res) => {
                         BusinessShortCode: ENV.MPESA.SHORTCODE,
                         Password: password,
                         Timestamp: timestamp,
-                        TransactionType: "CustomerPayBillOnline",
+                        TransactionType: ENV.MPESA.ENV === "production" ? "CustomerBuyGoodsOnline" : "CustomerPayBillOnline",
                         Amount: Math.ceil(invoice.amount), // Ensure integer
                         PartyA: phone,
                         PartyB: ENV.MPESA.SHORTCODE,
