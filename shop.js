@@ -388,6 +388,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 trxInput.value = "VERIFIED-" + invoice.reference_number;
                                 trxInput.style.backgroundColor = '#d4edda';
                                 stkBtn.innerText = "Paid & Verified";
+                            } else if (statusData.status === 'FAILED') {
+                                clearInterval(pollInterval);
+                                stkStatusText.innerHTML = "❌ <span style='color:red; font-weight:bold;'>Payment Failed or Cancelled.</span>";
+                                stkBtn.disabled = false;
+                                stkBtn.innerText = "Retry Payment";
                             }
                         } catch (e) {
                             console.error("Polling error:", e);

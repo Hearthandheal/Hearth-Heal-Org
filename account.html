@@ -61,6 +61,9 @@
                     </div>
                     <nav class="account-nav">
                         <!-- Anchor Links for Single Page Navigation -->
+                        <a href="#home-section" class="account-nav-btn">
+                            <i data-feather="home"></i> Home
+                        </a>
                         <a href="#profile-section" class="account-nav-btn">
                             <i data-feather="user"></i> Profile
                         </a>
@@ -81,6 +84,53 @@
 
                 <!-- Content Area -->
                 <section class="account-content animate-on-scroll fade-up">
+
+                    <!-- Home / Dashboard Panel -->
+                    <div id="home-section" class="account-section">
+                        <div class="dashboard-header">
+                            <div>
+                                <h1 class="section-title" style="border:none; margin-bottom: 0.5rem;">Welcome Back!</h1>
+                                <p class="text-light">Here's what's happening with your account today.</p>
+                            </div>
+                            <a href="shop.html" class="btn btn-primary"><i data-feather="shopping-cart"></i> Shop
+                                Now</a>
+                        </div>
+
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon"><i data-feather="shopping-bag"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-value" id="dashboard-orders-count">0</span>
+                                    <span class="stat-label">Total Orders</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i data-feather="heart"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-value">Member</span>
+                                    <span class="stat-label">Status</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i data-feather="message-circle"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-value">0</span>
+                                    <span class="stat-label">Messages</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-banner">
+                            <div class="banner-content">
+                                <h3>Join the Conversation</h3>
+                                <p>Our community forum is buzzing with new topics on mental wellness.</p>
+                                <a href="mission.html" class="btn btn-secondary"
+                                    style="border-color:white; color:white;">Explore</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="divider">
 
                     <!-- Profile Section -->
                     <div id="profile-section" class="account-section">

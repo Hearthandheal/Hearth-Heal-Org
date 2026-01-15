@@ -141,6 +141,33 @@ function getMpesaPassword(timestamp) {
     return Buffer.from(ENV.MPESA.SHORTCODE + ENV.MPESA.PASSKEY + timestamp).toString("base64");
 }
 
+async function checkMpesaStatus(invoice) {
+    if (!invoice.checkout_request_id) return null; // Can't check without ID
+
+    try {
+        const token = await getMpesaAccessToken();
+        const timestamp = getMpesaTimestamp();
+        const password = getMpesaPassword(timestamp);
+
+        const res = await axios.post(
+            `${getMpesaBaseUrl()}/mpesa/stkpushquery/v1/query`,
+            {
+                BusinessShortCode: ENV.MPESA.SHORTCODE,
+                Password: password,
+                Timestamp: timestamp,
+                CheckoutRequestID: invoice.checkout_request_id
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        return res.data; // Expected { ResultCode, ResultDesc, ... }
+    } catch (err) {
+        // If error is 500 from Safaricom, it might just be too early to check or invalid ID
+        logger.warn("M-Pesa Status Query Failed", { error: err.response?.data || err.message });
+        return null;
+    }
+}
+
 // SendGrid email sending (transporter not needed)
 
 // Send email function
@@ -450,7 +477,30 @@ app.post("/invoices", async (req, res) => {
 
 app.get("/invoices/:ref", async (req, res) => {
     const invs = await db.query(`SELECT * FROM invoices WHERE reference_number = ?`, [req.params.ref]);
-    invs[0] ? res.json(invs[0]) : res.status(404).json({ error: "Not found" });
+    const invoice = invs[0];
+
+    if (!invoice) return res.status(404).json({ error: "Not found" });
+
+    // Proactive Status Check if PENDING and we have a CheckoutRequestID
+    if (invoice.status === "PENDING" && invoice.checkout_request_id) {
+        const statusData = await checkMpesaStatus(invoice);
+        if (statusData) {
+            // ResultCode: "0" is success, others are error/cancelled
+            if (statusData.ResultCode === "0") {
+                await db.run(`UPDATE invoices SET status = 'PAID', paid_at = ? WHERE reference_number = ?`, [now(), invoice.reference_number]);
+                invoice.status = 'PAID';
+                invoice.paid_at = now();
+                audit("MPESA_PAYMENT_VERIFIED", { reference_number: invoice.reference_number });
+            } else if (["1031", "1032", "1"].includes(String(statusData.ResultCode))) {
+                // 1032: Cancelled by user. 1031: Timeout. 1: Generally failed.
+                // Ideally mark as FAILED, but let's keep PENDING or mark FAILED
+                await db.run(`UPDATE invoices SET status = 'FAILED' WHERE reference_number = ?`, [invoice.reference_number]);
+                invoice.status = 'FAILED';
+            }
+        }
+    }
+
+    res.json(invoice);
 });
 
 app.post("/payments", async (req, res) => {
@@ -496,6 +546,12 @@ app.post("/payments", async (req, res) => {
                 );
 
                 audit("MPESA_STK_INITIATED", { reference_number, response: stkRes.data });
+
+                // Update Invoice with CheckoutRequestID
+                await db.run(
+                    `UPDATE invoices SET checkout_request_id = ? WHERE reference_number = ?`,
+                    [stkRes.data.CheckoutRequestID, reference_number]
+                );
 
                 // We don't update status to PAID yet; we wait for callback
                 return res.json({

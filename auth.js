@@ -4,8 +4,8 @@
  */
 
 const Auth = {
-    // Relative path works both locally and in production
-    API_BASE: '',
+    // Relative path works both locally and in production, fallback to 3000 for file://
+    API_BASE: window.location.protocol === 'file:' ? 'http://localhost:3000' : '',
     CURRENT_USER_KEY: 'hearth_current_user',
     JWT_KEY: 'hearth_jwt_token',
 
@@ -16,6 +16,8 @@ const Auth = {
         const pageName = path.split('/').pop().toLowerCase() || 'index.html';
 
         const authPages = ['login.html', 'signup.html', 'forgot-password.html'];
+        // Pages that are accessible without login (Homepage, Mission, Contact, Services, Donate)
+        const publicPages = ['index.html', 'mission.html', 'contact.html', 'services.html', 'donate.html'];
 
         if (currentUser) {
             // Logged in users: redirect away from auth pages to home
@@ -24,11 +26,14 @@ const Auth = {
             }
             Auth.updateUI(true);
         } else {
-            // Not logged in: redirect to login unless already on an auth page
-            if (!authPages.includes(pageName)) {
+            // Not logged in
+            // Allow access ONLY if it's an auth page OR a public page
+            if (authPages.includes(pageName) || publicPages.includes(pageName)) {
+                Auth.updateUI(false);
+            } else {
+                // Restricted page (Shop, Cart, Account, etc.) -> Redirect to login
                 window.location.href = 'login.html';
             }
-            Auth.updateUI(false);
         }
     },
 

@@ -84,6 +84,7 @@ const initDb = async () => {
             currency TEXT,
             description TEXT,
             status TEXT,
+            checkout_request_id TEXT,
             created_at TEXT,
             expires_at TEXT,
             paid_at TEXT
@@ -102,6 +103,13 @@ const initDb = async () => {
         } catch (err) {
             console.warn("Table initialization hint:", err.message);
         }
+    }
+
+    // Migration: Add checkout_request_id if missing
+    try {
+        await run(`ALTER TABLE invoices ADD COLUMN checkout_request_id TEXT`);
+    } catch (e) {
+        // Ignore error if column already exists
     }
 };
 
