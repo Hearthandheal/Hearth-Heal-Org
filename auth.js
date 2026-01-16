@@ -13,11 +13,19 @@ const Auth = {
     checkSession: () => {
         const currentUser = Auth.getCurrentUser();
         const path = window.location.pathname;
-        const pageName = path.split('/').pop().toLowerCase() || 'index.html';
+        // Improve page extraction: handle / correctly and query params
+        let pageName = path.split('/').pop().split('?')[0].toLowerCase();
+
+        // Explicitly handle root path or empty extraction
+        if (path === '/' || pageName === '') {
+            pageName = 'index.html';
+        }
 
         const authPages = ['login.html', 'signup.html', 'forgot-password.html'];
         // Pages that are accessible without login (Homepage, Mission, Contact, Services, Donate)
         const publicPages = ['index.html', 'mission.html', 'contact.html', 'services.html', 'donate.html'];
+
+        console.log(`[Auth] Checking access for: ${pageName}. Logged in: ${!!currentUser}`);
 
         if (currentUser) {
             // Logged in users: redirect away from auth pages to home
@@ -31,6 +39,7 @@ const Auth = {
             if (authPages.includes(pageName) || publicPages.includes(pageName)) {
                 Auth.updateUI(false);
             } else {
+                console.warn(`[Auth] Access denied to ${pageName}. Redirecting to login.`);
                 // Restricted page (Shop, Cart, Account, etc.) -> Redirect to login
                 window.location.href = 'login.html';
             }
