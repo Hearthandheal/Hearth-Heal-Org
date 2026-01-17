@@ -398,7 +398,7 @@ app.post(["/reset/request", "/request-reset"], resetLimiter, async (req, res) =>
 
         const code = generateOtp();
         const ref = getUuid();
-        const codeHash = crypto.createHash('sha256').update(code).digest('hex');
+        const codeHash = bcrypt.hashSync(code, 8); // Use bcrypt for consistency
 
         await db.run(
             `INSERT INTO password_resets (ref, token_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`,
@@ -414,7 +414,11 @@ app.post(["/reset/request", "/request-reset"], resetLimiter, async (req, res) =>
         await sendEmail(email, "Password Reset Code", emailBody);
         audit("PASSWORD_RESET_REQUESTED", { email, ref });
 
-        res.json({ ref, message: "Reset code sent to email" });
+        // Dev/Sim mode: return code
+        const responseData = { ref, message: "Reset code sent to email" };
+        if (!ENV.SENDGRID_API_KEY) responseData.code = code;
+
+        res.json(responseData);
     } catch (err) {
         logger.error("Reset request failed", { error: err.message });
         res.status(500).json({ error: "Server error" });
@@ -431,7 +435,7 @@ app.post(["/reset/verify", "/verify-reset"], authLimiter, async (req, res) => {
 
         if (newPassword.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
 
-        const codeHash = crypto.createHash('sha256').update(resetCode).digest('hex');
+
         const records = await db.query(`SELECT * FROM password_resets WHERE ref = ?`, [ref]);
         const record = records[0];
 
@@ -440,7 +444,7 @@ app.post(["/reset/verify", "/verify-reset"], authLimiter, async (req, res) => {
             return res.status(400).json({ error: "Invalid or expired reset link" });
         }
 
-        if (record.token_hash !== codeHash) {
+        if (!bcrypt.compareSync(resetCode, record.token_hash)) {
             audit("PASSWORD_RESET_FAILED", { ref, reason: "CODE_MISMATCH" });
             return res.status(400).json({ error: "Invalid reset code" });
         }
