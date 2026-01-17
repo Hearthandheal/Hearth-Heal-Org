@@ -168,16 +168,14 @@ async function checkMpesaStatus(invoice) {
     }
 }
 
-// SendGrid email sending (transporter not needed)
-
 // Send email function
 async function sendEmail(to, subject, text) {
     // Always log to console for development/debugging
     logger.info("EMAIL_ATTEMPT", { to, subject });
-    console.log(`\n=== [EMAIL DEBUG] ===\nTo: ${to}\nSubject: ${subject}\nBody: ${text}\n====================\n`);
 
     if (!ENV.SENDGRID_API_KEY) {
         logger.warn("SENDGRID_API_KEY_MISSING: Simulation mode active.", { to });
+        console.log(`\n=== [EMAIL SIMULATION] ===\nTo: ${to}\nSubject: ${subject}\nBody: ${text}\n========================\n`);
         return;
     }
 
@@ -185,20 +183,16 @@ async function sendEmail(to, subject, text) {
         to,
         from: ENV.EMAIL_FROM,
         subject,
-        text,
-        html: `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
-                <h2 style="color: #00E676;">Hearth & Heal</h2>
-                <p>${text.replace(/\n/g, '<br>')}</p>
-                <hr style="border: none; border-top: 1px solid #eee;">
-                <p style="font-size: 12px; color: #888;">If you didn't request this, please ignore this email.</p>
-               </div>`
+        text
     };
 
     try {
         await sgMail.send(msg);
-        logger.info("EMAIL_SENT_SUCCESS", { to, provider: "SendGrid" });
+        console.log('OTP email sent');
+        logger.info("EMAIL_SENT_SUCCESS", { to });
     } catch (err) {
-        logger.error("EMAIL_SEND_FAILURE", { error: err.message, to, provider: "SendGrid", code: err.code });
+        console.error(err);
+        logger.error("EMAIL_SEND_FAILURE", { error: err.message });
         // Don't throw error - allow signup/login to continue
         logger.warn("EMAIL_FAILED_BUT_CONTINUING", { to, codeInLogs: true });
     }
