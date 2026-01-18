@@ -21,6 +21,7 @@ const db = require("./db");
 const path = require("path");
 
 const app = express();
+app.set('trust proxy', 1); // Required for Render
 
 app.get("/health", (req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
 const logger = winston.createLogger({
