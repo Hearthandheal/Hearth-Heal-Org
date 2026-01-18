@@ -295,21 +295,9 @@ app.post("/login", authLimiter, async (req, res) => {
             return res.status(400).json({ error: "Invalid credentials" });
         }
 
-        // Check 1-minute cooldown for OTP
-        const recent = await db.query(`SELECT * FROM otps WHERE identifier = ? AND (expires_at - ?) > ? ORDER BY expires_at DESC LIMIT 1`, [email, ENV.OTP_EXPIRY_MS, Date.now() - 60000]);
-        if (recent[0]) return res.status(429).json({ error: "OTP already sent. Please wait 1 minute before requesting another." });
-
-        const otp = generateOtp();
-        const ref = getUuid();
-        const otpHash = bcrypt.hashSync(otp, 8);
-
-        await db.run(
-            `INSERT INTO otps (ref, otp_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`,
-            [ref, otpHash, email, Date.now() + ENV.OTP_EXPIRY_MS]
-        );
-
-        await sendEmail(email, "Login OTP", `Your OTP is ${otp}. Expires in 5 minutes.`);
-        res.json({ ref, message: "OTP sent" });
+        // Direct login success - Issue token immediately
+        const token = signJwt({ email: user.identifier });
+        res.json({ success: true, token, user: { email: user.identifier, verified: user.verified } });
     } catch (err) {
         logger.error("Login attempt failed", { error: err.message });
         res.status(500).json({ error: err.message || "Server error" });

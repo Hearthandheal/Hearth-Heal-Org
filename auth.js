@@ -121,9 +121,17 @@ const Auth = {
             });
             const data = await response.json();
             if (response.ok) {
+                // Direct login success (Password flow)
+                if (data.token) {
+                    Auth.setToken(data.token);
+                    Auth.setCurrentUser(data.user);
+                    return { success: true, directLogin: true };
+                }
+
+                // Fallback (if API changes back)
                 Auth._loginRef = data.ref;
                 Auth._loginEmail = email;
-                return { success: true };
+                return { success: true, directLogin: false };
             }
             return { success: false, message: data.error };
         } catch (err) {

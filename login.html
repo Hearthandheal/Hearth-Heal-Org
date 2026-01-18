@@ -189,8 +189,13 @@
             }
 
             if (result.success) {
-                document.querySelector('.main-step').style.display = 'none';
-                document.querySelector('.otp-step').style.display = 'block';
+                if (result.directLogin) {
+                    window.location.href = 'index.html'; // Direct login
+                } else {
+                    document.querySelector('.main-step').style.display = 'none';
+                    document.querySelector('.otp-step').style.display = 'block';
+                    errorDiv.style.display = 'none';
+                }
                 errorDiv.style.display = 'none';
             } else {
                 errorDiv.innerText = result.message || "Login failed";
