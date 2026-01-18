@@ -439,7 +439,8 @@ app.post(["/reset/verify", "/verify-reset"], authLimiter, async (req, res) => {
         }
 
         const passwordHash = bcrypt.hashSync(newPassword, 10);
-        await db.run(`UPDATE users SET password_hash = ? WHERE identifier = ?`, [passwordHash, record.identifier]);
+        // Also mark user as verified since they proved ownership via email code
+        await db.run(`UPDATE users SET password_hash = ?, verified = TRUE WHERE identifier = ?`, [passwordHash, record.identifier]);
         await db.run(`DELETE FROM password_resets WHERE ref = ?`, [ref]);
 
         audit("PASSWORD_RESET_SUCCESS", { email: record.identifier });
