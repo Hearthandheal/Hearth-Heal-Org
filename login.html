@@ -84,8 +84,15 @@
                         </div>
                         <button type="button" onclick="verify2FA()" class="btn btn-primary auth-btn"
                             style="width: 100%; border-radius: 12px; padding: 1rem;">Verify & Login</button>
+
+                        <p
+                            style="text-align: center; margin-top: 1rem; font-size: 0.9rem; color: var(--color-text-light);">
+                            Didn't receive code? <a href="#" id="resend-link" onclick="resendOTP(event)"
+                                style="color: var(--color-primary); font-weight: 600; transition: all 0.3s;">Resend</a>
+                        </p>
+
                         <button type="button" onclick="location.reload()" class="btn btn-secondary"
-                            style="width: 100%; margin-top: 1rem; border: none; font-size: 0.9rem;">Cancel</button>
+                            style="width: 100%; margin-top: 0.5rem; border: none; font-size: 0.9rem;">Cancel</button>
                     </div>
 
                     <div id="errorMsg" class="error-msg"
@@ -218,6 +225,54 @@
             } else {
                 showError(res.message || "Invalid OTP");
             }
+        }
+
+        async function resendOTP(e) {
+            e.preventDefault();
+            const link = document.getElementById('resend-link');
+            if (link.style.opacity === '0.5') return; // Disabled
+
+            const email = document.getElementById('email').value;
+
+            // Visual feedback
+            const originalText = link.innerText;
+            link.innerText = "Sending...";
+            link.style.opacity = '0.5';
+            link.style.pointerEvents = 'none';
+
+            const res = await Auth.requestOTP(email, 'email');
+
+            if (res.success) {
+                showError("Code resent successfully! Check your inbox."); // Reusing error div for success simply
+                const errDiv = document.getElementById('errorMsg');
+                errDiv.style.background = 'rgba(0, 230, 118, 0.1)';
+                errDiv.style.borderColor = 'rgba(0, 230, 118, 0.2)';
+
+                // Start Cooldown
+                startResendCooldown(60, link);
+            } else {
+                showError(res.message || "Failed to resend");
+                link.innerText = "Resend";
+                link.style.opacity = '1';
+                link.style.pointerEvents = 'auto';
+            }
+        }
+
+        function startResendCooldown(seconds, link) {
+            let remaining = seconds;
+            link.innerText = `Resend in ${remaining}s`;
+
+            const interval = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(interval);
+                    link.innerText = "Resend";
+                    link.style.opacity = '1';
+                    link.style.pointerEvents = 'auto';
+                } else {
+                    link.innerText = `Resend in ${remaining}s`;
+                }
+            }, 1000);
         }
     </script>
 </body>
