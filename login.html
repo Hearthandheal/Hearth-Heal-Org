@@ -12,132 +12,93 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Outfit:wght@500;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <style>
-        .auth-container {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: radial-gradient(circle at center, rgba(0, 230, 118, 0.05) 0%, #050505 70%);
-        }
-
-        .auth-card {
-            background: var(--color-surface);
-            padding: 3rem;
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--color-border);
-            width: 100%;
-            max-width: 450px;
-            box-shadow: var(--shadow-lg);
-            animation: fadeUp 0.8s ease-out;
-        }
-
-        .auth-header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-        }
-
-        .auth-header h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-            color: var(--color-primary);
-        }
-
-        .auth-btn {
-            width: 100%;
-            margin-top: 1rem;
-        }
-
-        .auth-links {
-            margin-top: 1.5rem;
-            text-align: center;
-            font-size: 0.9rem;
-            color: var(--color-text-light);
-        }
-
-        .auth-links a {
-            color: var(--color-primary);
-            text-decoration: underline;
-        }
-
-        .error-msg {
-            color: #ff4444;
-            font-size: 0.9rem;
-            margin-top: 1rem;
-            text-align: center;
-            display: none;
-        }
-
-        .otp-step {
-            display: none;
-        }
-
-        .auth-tab {
-            background: none;
-            border: none;
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            font-weight: 600;
-            color: #888;
-            border-bottom: 2px solid transparent;
-        }
-
-        .auth-tab.active {
-            color: var(--color-primary);
-            border-bottom-color: var(--color-primary);
-        }
-    </style>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
-<body>
+<body class="login-page">
 
-    <div class="auth-container">
-        <div class="auth-card">
-            <div class="auth-header">
-                <h1>Welcome Back</h1>
-                <p>Sign in with multi-factor security</p>
+    <div class="login-split">
+        <!-- Left Graphic Panel -->
+        <div class="graphic-panel">
+            <div class="graphic-content">
+                <h1>Welcome to the Future of Care</h1>
+                <p>Join our community dedicated to healing through innovation and compassion. Secure, fast, and always
+                    there for you.</p>
             </div>
+        </div>
 
-            <!-- Login Tabs -->
-            <div style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid #eee;">
-                <button id="tab-password" class="auth-tab active" onclick="switchMode('password')">Password +
-                    OTP</button>
-                <button id="tab-direct" class="auth-tab" onclick="switchMode('direct')">OTP Only</button>
-            </div>
-
-            <form id="loginForm">
-                <!-- STEP 1: Main Login -->
-                <div class="main-step">
-                    <div id="password-group" class="form-group">
-                        <label>Email Address</label>
-                        <input type="email" id="email" placeholder="Enter your email">
-                    </div>
-
-                    <div id="password-input-group" class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="password" placeholder="Enter your password">
-                    </div>
-
-                    <button type="submit" id="btn-login" class="btn btn-primary auth-btn">Continue</button>
+        <!-- Right Login Panel -->
+        <div class="login-panel">
+            <div class="glass-card">
+                <div class="auth-header">
+                    <h1 style="font-size: 1.8rem; margin-bottom: 0.2rem;">Welcome Back</h1>
+                    <p style="color: var(--color-text-light); font-size: 0.9rem;">Sign in to access your dashboard</p>
                 </div>
 
-                <!-- STEP 2: 2FA / OTP Verify -->
-                <div class="otp-step">
-                    <p style="text-align: center; margin-bottom: 1rem; color: #888;">Enter the 6-digit code sent to your
-                        email</p>
-                    <div class="form-group">
-                        <label>Verification Code</label>
-                        <input type="text" id="otp-code" placeholder="6-digit code">
-                    </div>
-                    <button type="button" onclick="verify2FA()" class="btn btn-primary auth-btn">Verify & Login</button>
+                <!-- Login Tabs -->
+                <div
+                    style="display: flex; gap: 0.5rem; margin-bottom: 2rem; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 50px;">
+                    <button id="tab-password" class="auth-tab active" style="flex: 1;"
+                        onclick="switchMode('password')">Password</button>
+                    <button id="tab-direct" class="auth-tab" style="flex: 1;" onclick="switchMode('direct')">OTP / No
+                        Pass</button>
                 </div>
 
-                <div id="errorMsg" class="error-msg"></div>
-            </form>
+                <form id="loginForm">
+                    <!-- STEP 1: Main Login -->
+                    <div class="main-step">
+                        <div id="password-group" class="form-group">
+                            <label><i class="fas fa-envelope"
+                                    style="margin-right: 8px; color: var(--color-primary);"></i>Email Address</label>
+                            <input type="email" id="email" placeholder="name@example.com">
+                        </div>
 
-            <div class="auth-links">
-                <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
-                <p style="margin-top: 0.5rem;"><a href="forgot-password.html">Forgot Password?</a></p>
+                        <div id="password-input-group" class="form-group">
+                            <label><i class="fas fa-lock"
+                                    style="margin-right: 8px; color: var(--color-primary);"></i>Password</label>
+                            <input type="password" id="password" placeholder="••••••••">
+                        </div>
+
+                        <button type="submit" id="btn-login" class="btn btn-primary auth-btn"
+                            style="width: 100%; border-radius: 12px; padding: 1rem;">
+                            Continue <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
+                        </button>
+                    </div>
+
+                    <!-- STEP 2: 2FA / OTP Verify -->
+                    <div class="otp-step" style="display: none;">
+                        <div style="text-align: center; margin-bottom: 1.5rem;">
+                            <div
+                                style="width: 60px; height: 60px; background: rgba(0, 230, 118, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; color: var(--color-primary);">
+                                <i class="fas fa-shield-alt" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <h3 style="font-size: 1.2rem;">Verification Code</h3>
+                            <p style="color: var(--color-text-light); font-size: 0.9rem;">Enter the 6-digit code sent to
+                                your email</p>
+                        </div>
+
+                        <div class="form-group">
+                            <input type="text" id="otp-code" placeholder="000 000"
+                                style="text-align: center; font-size: 1.5rem; letter-spacing: 5px; font-weight: 700;">
+                        </div>
+                        <button type="button" onclick="verify2FA()" class="btn btn-primary auth-btn"
+                            style="width: 100%; border-radius: 12px; padding: 1rem;">Verify & Login</button>
+                        <button type="button" onclick="location.reload()" class="btn btn-secondary"
+                            style="width: 100%; margin-top: 1rem; border: none; font-size: 0.9rem;">Cancel</button>
+                    </div>
+
+                    <div id="errorMsg" class="error-msg"
+                        style="background: rgba(255, 68, 68, 0.1); padding: 0.8rem; border-radius: 8px; border: 1px solid rgba(255, 68, 68, 0.2);">
+                    </div>
+                </form>
+
+                <div class="auth-links">
+                    <p style="font-size: 0.9rem;">New here? <a href="signup.html" style="font-weight: 600;">Create
+                            Account</a></p>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem;"><a href="forgot-password.html">Forgot
+                            Password?</a></p>
+                </div>
             </div>
         </div>
     </div>
@@ -155,8 +116,10 @@
             const passGroup = document.getElementById('password-input-group');
             if (mode === 'password') {
                 passGroup.style.display = 'block';
+                document.getElementById('password').setAttribute('required', 'true');
             } else {
                 passGroup.style.display = 'none';
+                document.getElementById('password').removeAttribute('required');
             }
 
             // Reset steps
@@ -173,13 +136,13 @@
             const btn = document.getElementById('btn-login');
 
             if (!email) {
-                errorDiv.innerText = "Email is required";
-                errorDiv.style.display = 'block';
+                showError("Email is required");
                 return;
             }
 
             btn.disabled = true;
-            btn.innerText = "Checking...";
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Checking...';
 
             let result;
             if (loginMode === 'password') {
@@ -198,17 +161,31 @@
                 }
                 errorDiv.style.display = 'none';
             } else {
-                errorDiv.innerText = result.message || "Login failed";
-                errorDiv.style.display = 'block';
+                showError(result.message || "Login failed");
 
                 if (result.message && result.message.toLowerCase().includes("wait")) {
                     startCooldown(60);
                 } else {
-                    btn.innerText = "Continue";
+                    btn.innerHTML = originalText;
                     btn.disabled = false;
                 }
             }
         });
+
+        function showError(msg) {
+            const errorDiv = document.getElementById('errorMsg');
+            errorDiv.innerHTML = `<i class="fas fa-exclamation-circle" style="margin-right: 5px;"></i> ${msg}`;
+            errorDiv.style.display = 'block';
+
+            // Shake effect
+            const card = document.querySelector('.glass-card');
+            card.animate([
+                { transform: 'translateX(0)' },
+                { transform: 'translateX(-10px)' },
+                { transform: 'translateX(10px)' },
+                { transform: 'translateX(0)' }
+            ], { duration: 300 });
+        }
 
         function startCooldown(seconds) {
             const btn = document.getElementById('btn-login');
@@ -219,7 +196,7 @@
                 if (remaining <= 0) {
                     clearInterval(interval);
                     btn.disabled = false;
-                    btn.innerText = "Continue";
+                    btn.innerHTML = 'Continue <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>';
                 } else {
                     btn.innerText = `Resend in ${remaining}s`;
                 }
@@ -228,15 +205,18 @@
 
         async function verify2FA() {
             const code = document.getElementById('otp-code').value;
-            const errorDiv = document.getElementById('errorMsg');
+
+            if (!code || code.length < 6) {
+                showError("Please enter the 6-digit code");
+                return;
+            }
 
             const res = await Auth.verifyOTP(code);
 
             if (res.success) {
                 window.location.href = 'index.html';
             } else {
-                errorDiv.innerText = res.message || "Invalid OTP";
-                errorDiv.style.display = 'block';
+                showError(res.message || "Invalid OTP");
             }
         }
     </script>
