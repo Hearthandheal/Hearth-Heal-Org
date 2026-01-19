@@ -169,8 +169,44 @@ async function checkMpesaStatus(invoice) {
     }
 }
 
+// Email Template Helper
+function getEmailTemplate(title, bodyContent) {
+    return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            .email-container { font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0; }
+            .header { background: #000000; padding: 20px; text-align: center; }
+            .header img { height: 40px; }
+            .header h1 { color: #00E676; margin: 10px 0 0; font-size: 24px; }
+            .content { padding: 30px; color: #333333; line-height: 1.6; }
+            .otp-code { background: #f5f5f5; padding: 15px; text-align: center; font-size: 32px; letter-spacing: 5px; font-weight: bold; border-radius: 8px; margin: 20px 0; color: #000; border: 1px solid #ddd; }
+            .footer { background: #f9f9f9; padding: 15px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #eee; }
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <div class="header">
+                <h1>Hearth & Heal</h1>
+            </div>
+            <div class="content">
+                <h2 style="color: #000; margin-top: 0;">${title}</h2>
+                <p>Hello,</p>
+                ${bodyContent}
+                <p>If you didn't request this, please ignore this email.</p>
+            </div>
+            <div class="footer">
+                &copy; ${new Date().getFullYear()} Hearth and Heal Organization. All rights reserved.
+            </div>
+        </div>
+    </body>
+    </html>
+    `;
+}
+
 // Send email function
-async function sendEmail(to, subject, text) {
+async function sendEmail(to, subject, text, html = null) {
     // Always log to console for development/debugging
     logger.info("EMAIL_ATTEMPT", { to, subject });
 
@@ -182,9 +218,13 @@ async function sendEmail(to, subject, text) {
 
     const msg = {
         to,
-        from: ENV.EMAIL_FROM,
+        from: {
+            email: ENV.EMAIL_FROM,
+            name: "Hearth & Heal Security"
+        },
         subject,
-        text
+        text,
+        html: html || text // Fallback to text if no HTML provided
     };
 
     try {
@@ -250,7 +290,12 @@ app.post("/request-verification", authLimiter, async (req, res) => {
             [ref, codeHash, email, Date.now() + duration]
         );
 
-        await sendEmail(email, "Verify Your Email", `Your code is ${code}. It expires in 10 minutes.`);
+        const emailHtml = getEmailTemplate("Verify Your Email", `
+            <p>You requested to verify your email address. Use the code below to complete your registration:</p>
+            <div class="otp-code">${code}</div>
+            <p>This code expires in 10 minutes.</p>
+        `);
+        await sendEmail(email, "Verify Your Email - Hearth & Heal", `Your code is ${code}`, emailHtml);
         res.json({ ref, message: "Verification code sent" });
     } catch (err) {
         logger.error("Signup request failed", { error: err.message });
@@ -319,7 +364,12 @@ app.post("/login/request", async (req, res) => {
             [ref, codeHash, email, Date.now() + 10 * 60 * 1000]
         );
 
-        await sendEmail(email, "Hearth & Heal Login Code", `Your code is ${code}. Expires in 10 minutes.`);
+        const emailHtml = getEmailTemplate("Login Verification", `
+            <p>You requested to log in to your account. Use the code below to sign in:</p>
+            <div class="otp-code">${code}</div>
+            <p>This code expires in 10 minutes. Only share this code if you requested it.</p>
+        `);
+        await sendEmail(email, "Hearth & Heal Login Code", `Your login code is ${code}`, emailHtml);
         res.json({
             message: "Verification code sent to email",
             code, // remove code in production! 
@@ -361,7 +411,11 @@ app.post(["/auth/otp/request", "/request-otp"], authLimiter, async (req, res) =>
         const ref = getUuid();
         const otpHash = bcrypt.hashSync(otp, 8);
         await db.run(`INSERT INTO otps (ref, otp_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`, [ref, otpHash, email, Date.now() + ENV.OTP_EXPIRY_MS]);
-        await sendEmail(email, "Your OTP", `Your OTP is ${otp}`);
+        const emailHtml = getEmailTemplate("Your Verification Code", `
+            <p>Here is your one-time verification code:</p>
+            <div class="otp-code">${otp}</div>
+        `);
+        await sendEmail(email, "Your OTP Code", `Your OTP is ${otp}`, emailHtml);
         res.json({ ref, message: "OTP sent" });
     } catch (err) { res.status(500).json({ error: "Failed" }); }
 });
@@ -395,12 +449,16 @@ app.post(["/reset/request", "/request-reset"], resetLimiter, async (req, res) =>
         );
 
         const resetLink = `${ENV.BASE_URL}/forgot-password.html?ref=${ref}&token=${code}`;
-        const emailBody = `A password reset was requested for your account.\n\n` +
-            `Click here to reset: ${resetLink}\n\n` +
-            `Or use this reset code: ${code}\n\n` +
-            `This code expires in 15 minutes. If you did not request this, please ignore this email.`;
-
-        await sendEmail(email, "Password Reset Code", emailBody);
+        const emailHtml = getEmailTemplate("Reset Your Password", `
+            <p>We received a request to reset your password. Click the link below or enter the code manually:</p>
+            <div style="text-align: center; margin: 20px 0;">
+                <a href="${resetLink}" style="background-color: #00E676; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Password</a>
+            </div>
+            <p style="text-align: center;">Or use this code:</p>
+            <div class="otp-code">${code}</div>
+            <p>This link and code expire in 15 minutes.</p>
+        `);
+        await sendEmail(email, "Reset Your Password", emailBody, emailHtml);
         audit("PASSWORD_RESET_REQUESTED", { email, ref });
 
         // Dev/Sim mode: return code
