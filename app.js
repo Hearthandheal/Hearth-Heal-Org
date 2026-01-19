@@ -71,7 +71,7 @@ const ENV = {
     PORT: process.env.PORT || 3000,
     BASE_URL: process.env.BASE_URL || "http://localhost:3000",
     SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
-    EMAIL_FROM: process.env.EMAIL_FROM || "noreply@hearthandheal.org",
+    EMAIL_FROM: process.env.EMAIL_FROM || "hearthandhealorg@gmail.com",
     JWT_SECRETS: (process.env.JWT_SECRET || "default_h&h_secret").split(","),
     OTP_EXPIRY_MS: 5 * 60 * 1000,
     WEBHOOK_SHARED_SECRET: process.env.WEBHOOK_SHARED_SECRET || "change_me",
