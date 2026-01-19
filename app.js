@@ -61,6 +61,42 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// DEBUG EMAIL ENDPOINT - REMOVE IN PRODUCTION AFTER FIX
+app.get("/test-email", async (req, res) => {
+    const email = req.query.to;
+    if (!email) return res.json({ error: "Please provide ?to=email@address.com" });
+
+    try {
+        const msg = {
+            to: email,
+            from: ENV.EMAIL_FROM,
+            subject: "Test Email from Hearth & Heal",
+            text: "This is a test email to verify SendGrid configuration.",
+            html: "<strong>This is a test email</strong> to verify SendGrid configuration."
+        };
+
+        if (!ENV.SENDGRID_API_KEY) {
+            return res.json({
+                status: "Simulation Mode",
+                message: "SENDGRID_API_KEY is missing in process.env",
+                env: {
+                    hasKey: !!ENV.SENDGRID_API_KEY,
+                    emailFrom: ENV.EMAIL_FROM
+                }
+            });
+        }
+
+        await sgMail.send(msg);
+        res.json({ success: true, message: "Email sent successfully via SendGrid", from: ENV.EMAIL_FROM });
+    } catch (err) {
+        res.status(500).json({
+            error: "SendGrid Error",
+            message: err.message,
+            response: err.response ? err.response.body : "No response body"
+        });
+    }
+});
+
 /* ----------------------------- Database init --------------------------- */
 db.initDb()
     .then(() => logger.info("Database initialized"))
