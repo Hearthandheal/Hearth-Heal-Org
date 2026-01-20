@@ -9,6 +9,7 @@ const express = require("express");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const crypto = require("crypto");
 const cron = require("node-cron");
 const winston = require("winston");
@@ -22,6 +23,7 @@ const path = require("path");
 
 const app = express();
 app.set('trust proxy', 1); // Required for Render
+app.use(cookieParser()); // Add cookie parser middleware
 
 app.get("/health", (req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
 const logger = winston.createLogger({
@@ -313,26 +315,35 @@ app.post("/request-verification", authLimiter, async (req, res) => {
         }
 
         // Check 1-minute cooldown
-        const duration = 10 * 60 * 1000;
+        const duration = 60 * 60 * 1000; // 1 hour expiry as requested
         const recent = await db.query(`SELECT * FROM verifications WHERE identifier = ? AND expires_at > ? ORDER BY expires_at DESC LIMIT 1`, [email, Date.now() + duration - 60000]);
-        if (recent[0]) return res.status(429).json({ error: "Please wait 1 minute before requesting another code." });
+        if (recent[0]) return res.status(429).json({ error: "Please wait 1 minute before requesting another email." });
 
-        const code = generateOtp();
+        const token = crypto.randomBytes(32).toString("hex"); // 32-byte hex token
         const ref = getUuid();
-        const codeHash = bcrypt.hashSync(code, 8);
+        const codeHash = await bcrypt.hash(token, 12);
 
         await db.run(
             `INSERT INTO verifications (ref, code_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`,
             [ref, codeHash, email, Date.now() + duration]
         );
 
+        const verifyLink = `${ENV.BASE_URL}/verify-email.html?ref=${ref}&token=${token}`;
+
         const emailHtml = getEmailTemplate("Verify Your Email", `
-            <p>You requested to verify your email address. Use the code below to complete your registration:</p>
-            <div class="otp-code">${code}</div>
-            <p>This code expires in 10 minutes.</p>
+            <p>Welcome to Hearth & Heal! Please confirm your email address to continue.</p>
+            <div style="text-align: center; margin: 20px 0;">
+                <a href="${verifyLink}" style="background-color: #00E676; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verify Email</a>
+            </div>
+            <p style="text-align: center; font-size: 12px; color: #666;">Link expires in 1 hour.</p>
         `);
-        await sendEmail(email, "Verify Your Email - Hearth & Heal", `Your code is ${code}`, emailHtml);
-        res.json({ ref, message: "Verification code sent" });
+        await sendEmail(email, "Verify Your Account", `Click here: ${verifyLink}`, emailHtml);
+
+        // Dev/Sim
+        const debugData = { ref, message: "Verification link sent" };
+        if (!ENV.SENDGRID_API_KEY) debugData.link = verifyLink;
+
+        res.json(debugData);
     } catch (err) {
         logger.error("Signup request failed", { error: err.message });
         res.status(500).json({ error: err.message || "Server error" });
@@ -346,9 +357,10 @@ app.post("/verify-email", authLimiter, async (req, res) => {
         const record = records[0];
 
         if (!record || Date.now() > record.expires_at) return res.status(400).json({ error: "Invalid or expired code" });
-        if (!bcrypt.compareSync(code, record.code_hash)) return res.status(400).json({ error: "Invalid code" });
+        const validCode = await bcrypt.compare(code, record.code_hash);
+        if (!validCode) return res.status(400).json({ error: "Invalid code" });
 
-        const passwordHash = bcrypt.hashSync(password, 10);
+        const passwordHash = await bcrypt.hash(password, 12);
         await db.run(
             `INSERT INTO users (identifier, password_hash, verified) VALUES (?, ?, TRUE) 
              ON CONFLICT(identifier) DO UPDATE SET password_hash = ?, verified = TRUE`,
@@ -373,12 +385,23 @@ app.post("/login", authLimiter, async (req, res) => {
         const users = await db.query(`SELECT * FROM users WHERE identifier = ? AND verified = TRUE`, [email]);
         const user = users[0];
 
-        if (!user || !user.password_hash || !bcrypt.compareSync(password, user.password_hash)) {
+        const validPass = user && user.password_hash ? await bcrypt.compare(password, user.password_hash) : false;
+
+        if (!user || !validPass) {
             return res.status(400).json({ error: "Invalid credentials" });
         }
 
         // Direct login success - Issue token immediately
         const token = signJwt({ email: user.identifier });
+
+        // Set HttpOnly Cookie
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "Strict",
+            maxAge: 24 * 60 * 60 * 1000 // 1 day
+        });
+
         res.json({ success: true, token, user: { email: user.identifier, verified: user.verified } });
     } catch (err) {
         logger.error("Login attempt failed", { error: err.message });
@@ -391,7 +414,7 @@ app.post("/login/request", async (req, res) => {
     const { email } = req.body;
     const code = generateOtp();
     const ref = getUuid();
-    const codeHash = bcrypt.hashSync(code, 8);
+    const codeHash = await bcrypt.hash(code, 12);
 
     try {
         // Save to DB so it can be verified via /verify-otp
@@ -426,10 +449,20 @@ app.post(["/auth/otp/verify", "/verify-otp"], authLimiter, async (req, res) => {
         const record = records[0];
 
         if (!record || Date.now() > record.expires_at) return res.status(400).json({ error: "Invalid or expired OTP" });
-        if (!record.otp_hash || !bcrypt.compareSync(otp, record.otp_hash)) return res.status(400).json({ error: "Invalid OTP" });
+        const validOtp = await bcrypt.compare(otp, record.otp_hash);
+        if (!record.otp_hash || !validOtp) return res.status(400).json({ error: "Invalid OTP" });
 
         await db.run(`DELETE FROM otps WHERE ref = ?`, [ref]);
         const token = signJwt({ email: record.identifier });
+
+        // Set HttpOnly Cookie
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "Strict",
+            maxAge: 24 * 60 * 60 * 1000 // 1 day
+        });
+
         res.json({ success: true, token, user: { email: record.identifier } });
     } catch (err) {
         logger.error("OTP verification failed", { error: err.message, stack: err.stack });
@@ -445,7 +478,7 @@ app.post(["/auth/otp/request", "/request-otp"], authLimiter, async (req, res) =>
 
         const otp = generateOtp();
         const ref = getUuid();
-        const otpHash = bcrypt.hashSync(otp, 8);
+        const otpHash = await bcrypt.hash(otp, 12);
         await db.run(`INSERT INTO otps (ref, otp_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`, [ref, otpHash, email, Date.now() + ENV.OTP_EXPIRY_MS]);
         const emailHtml = getEmailTemplate("Your Verification Code", `
             <p>Here is your one-time verification code:</p>
@@ -477,7 +510,7 @@ app.post("/api/auth/forgot-password", resetLimiter, async (req, res) => {
 
         const token = crypto.randomBytes(32).toString("hex"); // Use token-style string as requested
         const ref = getUuid();
-        const tokenHash = bcrypt.hashSync(token, 8);
+        const tokenHash = await bcrypt.hash(token, 12);
 
         await db.run(
             `INSERT INTO password_resets (ref, token_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`,
@@ -560,7 +593,7 @@ app.post("/api/auth/reset-password", authLimiter, async (req, res) => {
         // We don't verify a secondary hash if we just use Ref as the secret token.
         // This acts as a Bearer token.
 
-        const passwordHash = bcrypt.hashSync(password, 10);
+        const passwordHash = await bcrypt.hash(password, 12);
         await db.run(`UPDATE users SET password_hash = ?, verified = TRUE WHERE identifier = ?`, [passwordHash, record.identifier]);
         await db.run(`DELETE FROM password_resets WHERE ref = ?`, [ref]);
 

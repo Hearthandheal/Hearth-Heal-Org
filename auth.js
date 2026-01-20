@@ -95,13 +95,29 @@ const Auth = {
         }
     },
 
-    // SIGNUP STEP 2
+    // SIGNUP STEP 2 (Code)
     completeSignup: async (code, password) => {
         try {
             const response = await fetch(`${Auth.API_BASE}/verify-email`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ref: Auth._signupRef, code, password })
+            });
+            const data = await response.json();
+            if (response.ok) return { success: true };
+            return { success: false, message: data.error };
+        } catch (err) {
+            return { success: false, message: 'Server unreachable' };
+        }
+    },
+
+    // SIGNUP STEP 2 (Link)
+    verifyEmailLink: async (ref, token, password) => {
+        try {
+            const response = await fetch(`${Auth.API_BASE}/verify-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ref, code: token, password })
             });
             const data = await response.json();
             if (response.ok) return { success: true };
