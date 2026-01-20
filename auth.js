@@ -162,14 +162,14 @@ const Auth = {
     // PASSWORD RESET STEP 1
     requestReset: async (email) => {
         try {
-            const response = await fetch(`${Auth.API_BASE}/reset/request`, {
+            const response = await fetch(`${Auth.API_BASE}/api/auth/forgot-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
             });
             const data = await response.json();
             if (response.ok) {
-                Auth._resetRef = data.ref;
+                // Auth._resetRef = data.ref; // No longer needed in new flow
                 return { success: true };
             }
             return { success: false, message: data.error };
@@ -181,14 +181,16 @@ const Auth = {
     // PASSWORD RESET STEP 2
     completeReset: async (token, newPassword) => {
         try {
-            const response = await fetch(`${Auth.API_BASE}/reset/verify`, {
+            const response = await fetch(`${Auth.API_BASE}/api/auth/reset-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ref: Auth._resetRef, token, newPassword })
+                body: JSON.stringify({ token, password: newPassword })
             });
-            const data = await response.json();
+            const text = await response.text();
             if (response.ok) return { success: true };
-            return { success: false, message: data.error };
+
+            try { return { success: false, message: JSON.parse(text).error }; }
+            catch (e) { return { success: false, message: text }; }
         } catch (err) {
             return { success: false, message: 'Server unreachable' };
         }
