@@ -467,13 +467,13 @@ app.post("/api/auth/forgot-password", resetLimiter, async (req, res) => {
         if (users.length === 0) {
             // Audit failed attempt but return success to prevent user enumeration
             audit("PASSWORD_RESET_REQUEST_FAILED", { email, reason: "NOT_FOUND" });
-            return res.json({ message: "If an account exists, a reset link was sent." });
+            return res.json({ message: "If that email is in our database, we have sent a reset link to it." });
         }
 
-        // Check 1-minute cooldown for Reset
-        const duration = 60 * 60 * 1000; // 1 hour expiry as per user code (3600000ms)
+        // Check 1-minute cooldown for Reset to prevent spamming
+        const duration = 2 * 60 * 1000; // 2 minutes expiry as requested
         const recent = await db.query(`SELECT * FROM password_resets WHERE identifier = ? AND (expires_at - ?) > ? ORDER BY expires_at DESC LIMIT 1`, [email, duration, Date.now() - 60000]);
-        if (recent[0]) return res.status(429).json({ error: "Reset link already sent. Please wait 1 minute." });
+        if (recent[0]) return res.json({ message: "If that email is in our database, we have sent a reset link to it." }); // Ambiguous success
 
         const token = crypto.randomBytes(32).toString("hex"); // Use token-style string as requested
         const ref = getUuid();
@@ -499,7 +499,7 @@ app.post("/api/auth/forgot-password", resetLimiter, async (req, res) => {
         audit("PASSWORD_RESET_REQUESTED", { email, ref });
 
         // Dev/Sim mode
-        const responseData = { message: "Reset link sent" }; // Matches user expectation
+        const responseData = { message: "If that email is in our database, we have sent a reset link to it." };
         if (!ENV.SENDGRID_API_KEY) responseData.token = token;
 
         res.json(responseData);
