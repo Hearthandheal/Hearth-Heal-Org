@@ -60,20 +60,20 @@
                         <p id="sidebar-email">...</p>
                     </div>
                     <nav class="account-nav">
-                        <!-- Anchor Links for Single Page Navigation -->
-                        <a href="#home-section" class="account-nav-btn">
+                        <!-- Tab Navigation -->
+                        <a href="#" class="account-nav-btn active" onclick="switchTab('home-section', event)">
                             <i data-feather="home"></i> Home
                         </a>
-                        <a href="#profile-section" class="account-nav-btn">
+                        <a href="#" class="account-nav-btn" onclick="switchTab('profile-section', event)">
                             <i data-feather="user"></i> Profile
                         </a>
-                        <a href="#orders-section" class="account-nav-btn">
+                        <a href="#" class="account-nav-btn" onclick="switchTab('orders-section', event)">
                             <i data-feather="shopping-bag"></i> Orders
                         </a>
-                        <a href="#security-section" class="account-nav-btn">
+                        <a href="#" class="account-nav-btn" onclick="switchTab('security-section', event)">
                             <i data-feather="shield"></i> Security
                         </a>
-                        <a href="#settings-section" class="account-nav-btn">
+                        <a href="#" class="account-nav-btn" onclick="switchTab('settings-section', event)">
                             <i data-feather="settings"></i> Settings
                         </a>
                         <button class="account-nav-btn logout-btn" onclick="Auth.logout()">
@@ -258,8 +258,31 @@
     <style>
         .account-section {
             padding: 1rem 0 2rem 0;
-            scroll-margin-top: 140px;
-            /* Offset for fixed header */
+            display: none;
+            /* Hide by default */
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .account-section.active-section {
+            display: block;
+        }
+
+        .account-nav-btn.active {
+            color: var(--color-primary);
+            background: rgba(0, 230, 118, 0.1);
+            border-left: 3px solid var(--color-primary);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .section-title {
@@ -294,6 +317,7 @@
         // Account Page Logic
         document.addEventListener('DOMContentLoaded', () => {
             loadUserProfile();
+            initTabs();
         });
 
         function loadUserProfile() {
@@ -309,6 +333,69 @@
 
             // Load cart data
             loadCartSummary();
+        }
+
+        function initTabs() {
+            // Check hash for direct tab access
+            const hash = window.location.hash.replace('#', '');
+            if (hash && document.getElementById(hash + '-section')) {
+                switchTab(hash + '-section');
+            } else if (hash && document.getElementById(hash)) {
+                switchTab(hash);
+            } else {
+                switchTab('home-section'); // Default
+            }
+        }
+
+        function loadCartSummary() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+            document.getElementById('cart-item-count').textContent = `${itemCount} item${itemCount !== 1 ? 's' : ''}`;
+            document.getElementById('cart-total-display').textContent = `$${total.toFixed(2)}`;
+
+            // Update feather icons
+            setTimeout(() => feather.replace(), 100);
+        }
+
+        function switchTab(tabId, event) {
+            if (event) event.preventDefault();
+
+            // Hide all sections
+            document.querySelectorAll('.account-section').forEach(el => {
+                el.classList.remove('active-section');
+            });
+
+            // Show target
+            const target = document.getElementById(tabId) || document.getElementById('home-section');
+            target.classList.add('active-section');
+
+            // Update Nav
+            document.querySelectorAll('.account-nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+                // Rough check if this button links to this tab - relying on click handler 'onclick' string or similar is tricky without direct ref.
+                // Simpler: Just rely on the event target if clicked, otherwise manually highlight based on known mapping?
+                // Let's do: add ID to buttons? No, just loop and check onclick attr text is easiest hack, 
+                // OR better: in clean up above, I added onclick.
+            });
+
+            if (event) {
+                // If clicked
+                event.currentTarget.classList.add('active');
+            } else {
+                // If called programmatically, find the link that matches
+                const buttons = document.querySelectorAll('.account-nav-btn');
+                buttons.forEach(btn => {
+                    const onClickAttr = btn.getAttribute('onclick');
+                    if (onClickAttr && onClickAttr.includes(`'${tabId}'`)) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+
+            // Optional: Update URL hash without scrolling
+            // history.replaceState(null, null, '#' + tabId);
         }
 
         function loadCartSummary() {
