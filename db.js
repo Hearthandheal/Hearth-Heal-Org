@@ -107,9 +107,17 @@ const initDb = async () => {
 
     // Migration: Add checkout_request_id if missing
     try {
-        await run(`ALTER TABLE invoices ADD COLUMN checkout_request_id TEXT`);
+        if (isProduction) {
+            await run(`ALTER TABLE invoices ADD COLUMN IF NOT EXISTS checkout_request_id TEXT`);
+        } else {
+            const columns = await query(`PRAGMA table_info(invoices)`);
+            const hasColumn = columns.some(c => c.name === 'checkout_request_id');
+            if (!hasColumn) {
+                await run(`ALTER TABLE invoices ADD COLUMN checkout_request_id TEXT`);
+            }
+        }
     } catch (e) {
-        // Ignore error if column already exists
+        console.warn("Migration warning:", e.message);
     }
 };
 
