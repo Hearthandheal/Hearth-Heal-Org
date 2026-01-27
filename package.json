@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Payment backend for Hearth and Heal",
   "main": "app.js",
+  "license": "ISC",
   "scripts": {
     "start": "node app.js"
   },
