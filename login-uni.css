@@ -1,0 +1,219 @@
+/* University Style Login Redesign */
+
+.login-page-uni {
+    background: url('assets/login_hero_bg.png') no-repeat center center;
+    background-size: cover;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    /* Vertically center */
+    justify-content: flex-start;
+    /* Left align but with padding */
+    padding: 0 5%;
+    position: relative;
+    font-family: 'Outfit', sans-serif;
+    overflow: hidden;
+    /* Hide overflow from blobs if they extend */
+}
+
+/* Gradient overlay to ensure text readability if needed, or just specific aesthetic */
+.login-page-uni::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    /* Slight darken for contrast */
+    z-index: 1;
+    pointer-events: none;
+}
+
+.uni-login-card {
+    position: relative;
+    z-index: 10;
+    background: #ffffff;
+    width: 100%;
+    max-width: 450px;
+    border-radius: 30px;
+    /* Very rounded corners as per reference */
+    padding: 3rem 2.5rem;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    margin-top: 50px;
+    /* Slight offset if needed */
+    margin-left: 5%;
+    /* Offset from left edge */
+}
+
+/* Decorative Blobs */
+.uni-blob {
+    position: absolute;
+    z-index: -1;
+    /* Behind the card content but... actually reference shows them "on" the card edge */
+}
+
+/* The blue accents are likely part of the card wrapper or absolute elements */
+.blob-top-right {
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 80px;
+    height: 80px;
+    background: #007bff;
+    /* Bright Blue */
+    border-radius: 0 30px 0 30px;
+    /* Custom shape matching reference corner */
+    z-index: 11;
+    /* Top of card */
+    box-shadow: -5px 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Re-interpreting the blobs based on the image: 
+   Top right: A blue square-ish shape with rounded corners poking OUT.
+   Bottom left: Similar blue shape poking OUT.
+*/
+
+.card-decoration-tr {
+    position: absolute;
+    top: 40px;
+    right: -15px;
+    width: 60px;
+    height: 60px;
+    background: #0066ff;
+    border-radius: 12px;
+    transform: rotate(15deg);
+    z-index: -1;
+}
+
+.uni-accents-tr {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 100px;
+    height: 100px;
+    background-color: #007bff;
+    border-radius: 0 30px 0 50%;
+    z-index: -1;
+}
+
+.uni-accents-bl {
+    position: absolute;
+    bottom: -10px;
+    left: -10px;
+    width: 100px;
+    height: 100px;
+    background-color: #007bff;
+    border-radius: 0 50% 0 30px;
+    z-index: -1;
+}
+
+
+/* Logos */
+.uni-logo-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.uni-logo {
+    height: 50px;
+    object-fit: contain;
+}
+
+.uni-title {
+    color: #0044cc;
+    /* Deep Blue title */
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+/* Form Styles */
+.uni-form-group {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.uni-input-field {
+    width: 100%;
+    background: #E8F0FE;
+    /* Very light blue/grey */
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 12px 15px;
+    font-size: 1rem;
+    color: #333;
+    transition: all 0.3s;
+}
+
+.uni-input-field:focus {
+    background: #ffffff;
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.uni-btn-primary {
+    background-color: #0066ff;
+    /* Vivid Blue */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: background 0.3s;
+    width: auto;
+    /* Or 100% depending on pref, reference shows "Login" button left aligned? or block? */
+    min-width: 120px;
+}
+
+.uni-btn-primary:hover {
+    background-color: #0052cc;
+}
+
+.uni-login-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.uni-link {
+    color: #333;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.uni-link:hover {
+    text-decoration: underline;
+    color: #007bff;
+}
+
+.uni-footer-text {
+    margin-top: 3rem;
+    font-size: 0.8rem;
+    color: #666;
+    text-align: left;
+}
+
+.uni-footer-text strong {
+    color: #000;
+}
+
+/* Top Right Logo Area */
+.uni-top-right-brand {
+    position: absolute;
+    top: 30px;
+    right: 40px;
+    z-index: 20;
+    background: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
