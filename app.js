@@ -207,35 +207,67 @@ async function checkMpesaStatus(invoice) {
     }
 }
 
-// Email Template Helper
+// Email Template Helper - Professional & Trusted Design
 function getEmailTemplate(title, bodyContent) {
     return `
     <!DOCTYPE html>
     <html>
     <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-            .email-container { font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0; }
-            .header { background: #000000; padding: 20px; text-align: center; }
-            .header img { height: 40px; }
-            .header h1 { color: #00E676; margin: 10px 0 0; font-size: 24px; }
-            .content { padding: 30px; color: #333333; line-height: 1.6; }
-            .otp-code { background: #f5f5f5; padding: 15px; text-align: center; font-size: 32px; letter-spacing: 5px; font-weight: bold; border-radius: 8px; margin: 20px 0; color: #000; border: 1px solid #ddd; }
-            .footer { background: #f9f9f9; padding: 15px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #eee; }
+            body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; color: #333; }
+            .email-container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+            
+            /* Trust Header */
+            .header { background: #0a0a0a; padding: 30px 20px; text-align: center; border-bottom: 4px solid #00E676; }
+            .brand-name { color: #ffffff; font-size: 24px; font-weight: 700; margin: 0; letter-spacing: 1px; display: inline-block; vertical-align: middle; }
+            
+            /* Verified Badge */
+            .verified-badge { 
+                display: inline-block; vertical-align: middle; margin-left: 10px; 
+                background: rgba(0, 230, 118, 0.15); border: 1px solid #00E676; 
+                color: #00E676; padding: 4px 10px; border-radius: 50px; 
+                font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+            }
+            .verified-icon { width: 14px; height: 14px; vertical-align: text-bottom; fill: currentColor; margin-right: 4px; }
+
+            .content { padding: 40px 30px; background: #fff; }
+            .content h2 { margin-top: 0; color: #111; font-size: 22px; }
+            .content p { font-size: 16px; line-height: 1.6; color: #444; margin-bottom: 20px; }
+            
+            /* OTP Box */
+            .otp-code { 
+                background: #f0fdf4; border: 1px dashed #00E676; 
+                color: #000; font-family: 'Courier New', monospace; font-size: 36px; font-weight: 700; letter-spacing: 8px;
+                padding: 20px; text-align: center; border-radius: 8px; margin: 25px 0;
+            }
+
+            .footer { background: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #eee; font-size: 12px; color: #888; }
+            .footer p { margin: 5px 0; }
+            .trust-msg { display: flex; align-items: center; justify-content: center; margin-bottom: 10px; color: #666; font-weight: 500; }
+            .lock-icon { width: 12px; height: 12px; margin-right: 5px; fill: #666; }
         </style>
     </head>
     <body>
         <div class="email-container">
             <div class="header">
-                <h1>Hearth & Heal</h1>
+                <div class="brand-name">Hearth & Heal</div>
+                <div class="verified-badge">
+                    <svg class="verified-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+                    Verified
+                </div>
             </div>
             <div class="content">
-                <h2 style="color: #000; margin-top: 0;">${title}</h2>
-                <p>Hello,</p>
+                <h2>${title}</h2>
                 ${bodyContent}
-                <p>If you didn't request this, please ignore this email.</p>
             </div>
             <div class="footer">
-                &copy; ${new Date().getFullYear()} Hearth and Heal Organization. All rights reserved.
+                <div class="trust-msg">
+                    <svg class="lock-icon" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-9-2c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
+                    Secured by Hearth & Heal Identity
+                </div>
+                <p>&copy; ${new Date().getFullYear()} Hearth and Heal Organization. All rights reserved.</p>
+                <p>This is an automated security notification. If you did not verify this action, please contact support immediately.</p>
             </div>
         </div>
     </body>
