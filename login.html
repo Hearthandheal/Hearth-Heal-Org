@@ -4,150 +4,307 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Mount Kenya University</title>
+    <title>Login - Hearth and Heal</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Outfit:wght@500;700;800&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-    <!-- Styles -->
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="login-uni.css">
 </head>
 
-<body class="login-page-uni">
+<body class="login-page">
 
-    <!-- Top Right Brand/Logo Placeholder -->
-    <div class="uni-top-right-brand">
-        <!-- Using text or image if available -->
-        <h2 style="margin:0; color:#0044cc; font-weight:800;">UniRP&trade;</h2>
+    <div class="login-split">
+        <!-- Left Graphic Panel -->
+        <div class="graphic-panel">
+            <div class="graphic-content">
+                <h1>Welcome to the Future of Care</h1>
+                <p>Join our community dedicated to healing through innovation and compassion. Secure, fast, and always
+                    there for you.</p>
+            </div>
+        </div>
+
+        <!-- Right Login Panel -->
+        <div class="login-panel">
+            <div class="glass-card">
+                <div class="auth-header">
+                    <img src="assets/logo.png" alt="Hearth and Heal" style="height: 60px; margin-bottom: 1.5rem;">
+                    <h1 style="font-size: 1.8rem; margin-bottom: 0.2rem;">Welcome Back</h1>
+                    <p style="color: var(--color-text-light); font-size: 0.9rem;">Sign in to access your dashboard</p>
+                </div>
+
+                <!-- Login Tabs -->
+                <div
+                    style="display: flex; gap: 0.5rem; margin-bottom: 2rem; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 50px;">
+                    <button id="tab-password" class="auth-tab active" style="flex: 1;"
+                        onclick="switchMode('password')">Password</button>
+                    <button id="tab-direct" class="auth-tab" style="flex: 1;" onclick="switchMode('direct')">OTP / No
+                        Pass</button>
+                </div>
+
+                <form id="loginForm">
+                    <!-- STEP 1: Main Login -->
+                    <div class="main-step">
+                        <div id="password-group" class="form-group">
+                            <label><i class="fas fa-envelope"
+                                    style="margin-right: 8px; color: var(--color-primary);"></i>Email Address</label>
+                            <input type="email" id="email" placeholder="name@example.com">
+                        </div>
+
+                        <div id="password-input-group" class="form-group">
+                            <label><i class="fas fa-lock"
+                                    style="margin-right: 8px; color: var(--color-primary);"></i>Password</label>
+                            <input type="password" id="password" placeholder="••••••••">
+                        </div>
+
+                        <button type="submit" id="btn-login" class="btn btn-primary auth-btn"
+                            style="width: 100%; border-radius: 12px; padding: 1rem;">
+                            Continue <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
+                        </button>
+                    </div>
+
+                    <!-- STEP 2: 2FA / OTP Verify -->
+                    <div class="otp-step" style="display: none;">
+                        <div style="text-align: center; margin-bottom: 1.5rem;">
+                            <div
+                                style="width: 60px; height: 60px; background: rgba(0, 230, 118, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; color: var(--color-primary);">
+                                <i class="fas fa-shield-alt" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <h3 style="font-size: 1.2rem;">Verification Code</h3>
+                            <p style="color: var(--color-text-light); font-size: 0.9rem;">Enter the 6-digit code sent to
+                                your email</p>
+                        </div>
+
+                        <div class="form-group">
+                            <input type="text" id="otp-code" placeholder="000 000"
+                                style="text-align: center; font-size: 1.5rem; letter-spacing: 5px; font-weight: 700;">
+                        </div>
+                        <button type="button" onclick="verify2FA()" class="btn btn-primary auth-btn"
+                            style="width: 100%; border-radius: 12px; padding: 1rem;">Verify & Login</button>
+
+                        <p
+                            style="text-align: center; margin-top: 1rem; font-size: 0.9rem; color: var(--color-text-light);">
+                            Didn't receive code? <a href="#" id="resend-link" onclick="resendOTP(event)"
+                                style="color: var(--color-primary); font-weight: 600; transition: all 0.3s;">Resend</a>
+                        </p>
+
+                        <button type="button" onclick="location.reload()" class="btn btn-secondary"
+                            style="width: 100%; margin-top: 0.5rem; border: none; font-size: 0.9rem;">Cancel</button>
+                    </div>
+
+                    <div id="errorMsg" class="error-msg"
+                        style="background: rgba(255, 68, 68, 0.1); padding: 0.8rem; border-radius: 8px; border: 1px solid rgba(255, 68, 68, 0.2);">
+                    </div>
+                </form>
+
+                <div class="auth-links">
+                    <p style="font-size: 0.9rem;">New here? <a href="signup.html" style="font-weight: 600;">Create
+                            Account</a></p>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem;"><a href="forgot-password.html">Forgot
+                            Password?</a></p>
+                </div>
+
+                <!-- Connect With Us -->
+                <div class="connect-section"
+                    style="margin-top: 2rem; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;">
+                    <p style="color: var(--color-text-light); font-size: 0.85rem; margin-bottom: 1rem;">Connect with us
+                    </p>
+                    <div class="social-icons"
+                        style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                        <a href="https://www.tiktok.com/@hearth.heal.org" target="_blank"
+                            style="color: var(--color-text); font-size: 1.2rem; transition: color 0.3s;"><i
+                                class="fab fa-tiktok"></i></a>
+                        <a href="https://www.instagram.com/hearthandhealorg/" target="_blank"
+                            style="color: var(--color-text); font-size: 1.2rem; transition: color 0.3s;"><i
+                                class="fab fa-instagram"></i></a>
+                        <a href="https://twitter.com/hearthandhealorg" target="_blank"
+                            style="color: var(--color-text); font-size: 1.2rem; transition: color 0.3s;"><i
+                                class="fab fa-twitter"></i></a>
+                        <a href="https://facebook.com/hearthandhealorg" target="_blank"
+                            style="color: var(--color-text); font-size: 1.2rem; transition: color 0.3s;"><i
+                                class="fab fa-facebook"></i></a>
+                        <a href="https://pinterest.com/hearthandhealorg" target="_blank"
+                            style="color: var(--color-text); font-size: 1.2rem; transition: color 0.3s;"><i
+                                class="fab fa-pinterest"></i></a>
+                        <a href="https://wa.me/254114433429" target="_blank"
+                            style="color: var(--color-text); font-size: 1.2rem; transition: color 0.3s;"><i
+                                class="fab fa-whatsapp"></i></a>
+                        <a href="https://www.youtube.com/@hearthandheal" target="_blank"
+                            style="color: var(--color-text); font-size: 1.2rem; transition: color 0.3s;"><i
+                                class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Main Floating Login Card -->
-    <div class="uni-login-card">
-
-        <!-- Decorative "Blobs" attached to card -->
-        <div class="uni-accents-tr"></div>
-        <div class="card-decoration-tr"></div>
-        <div class="uni-accents-bl"></div>
-
-        <!-- Card Content -->
-        <div class="uni-logo-container">
-            <img src="assets/logo.png" alt="University Logo" class="uni-logo">
-            <div style="line-height:1.2;">
-                <h3 style="margin:0; color:#003366; font-size:1.1rem;">Mount Kenya<br>University</h3>
-            </div>
-        </div>
-
-        <h1 class="uni-title">Login</h1>
-
-        <form id="loginForm">
-            <!-- Username / Email -->
-            <div class="uni-form-group">
-                <input type="email" id="email" class="uni-input-field" placeholder="Email / Admission No" required>
-            </div>
-
-            <!-- Password -->
-            <div class="uni-form-group">
-                <input type="password" id="password" class="uni-input-field" placeholder="Password" required>
-                <i class="fas fa-eye" style="position:absolute; right:15px; top:15px; color:#999; cursor:pointer;"></i>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="uni-login-actions">
-                <button type="submit" id="btn-login" class="uni-btn-primary">
-                    Login
-                </button>
-                <a href="forgot-password.html" class="uni-link">Forgot Password ?</a>
-            </div>
-
-            <div id="errorMsg" style="color: red; margin-top: 10px; display: none;"></div>
-
-            <!-- Hidden OTP Step (Preserved functionality just in case, though hidden in UI design) -->
-            <div id="otp-container" style="display:none; margin-top:20px; border-top:1px solid #eee; padding-top:20px;">
-                <h4 style="margin-bottom:10px;">Verification Code</h4>
-                <input type="text" id="otp-code" class="uni-input-field" placeholder="Enter 6-digit code"
-                    style="margin-bottom:10px;">
-                <button type="button" onclick="verify2FA()" class="uni-btn-primary" style="width:100%;">Verify</button>
-            </div>
-
-        </form>
-
-        <div class="uni-footer-text">
-            Powered By - <strong>Bloomfield Innovations</strong>
-        </div>
-
-    </div>
-
-    <!-- Bottom Social Footer -->
-    <div style="position: absolute; bottom: 30px; left: 0; width: 100%; text-align: center; z-index: 5;">
-        <div
-            style="display: inline-flex; gap: 1rem; background: rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 30px; backdrop-filter: blur(5px);">
-            <a href="#" style="color:white; font-size:1.2rem;"><i class="fab fa-facebook"></i></a>
-            <a href="#" style="color:white; font-size:1.2rem;"><i class="fab fa-instagram"></i></a>
-            <a href="#" style="color:white; font-size:1.2rem;"><i class="fab fa-youtube"></i></a>
-            <a href="#" style="color:white; font-size:1.2rem;"><i class="fab fa-linkedin"></i></a>
-        </div>
-        <!-- Simple dots pager indicator aesthetic -->
-        <div style="margin-top: 10px; display: flex; justify-content: center; gap: 5px;">
-            <span style="width:8px; height:8px; background:white; border-radius:50%; opacity:0.5;"></span>
-            <span style="width:8px; height:8px; background:#007bff; border-radius:50%;"></span>
-            <span style="width:8px; height:8px; background:white; border-radius:50%; opacity:0.5;"></span>
-        </div>
-    </div>
-
-    <!-- Scripts -->
+    <!-- Auth Logic -->
     <script src="auth.js"></script>
     <script>
-        // Adapted Logic for New Design
         let loginMode = 'password';
+
+        function switchMode(mode) {
+            loginMode = mode;
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`tab-${mode === 'password' ? 'password' : 'direct'}`).classList.add('active');
+
+            const passGroup = document.getElementById('password-input-group');
+            if (mode === 'password') {
+                passGroup.style.display = 'block';
+                document.getElementById('password').setAttribute('required', 'true');
+            } else {
+                passGroup.style.display = 'none';
+                document.getElementById('password').removeAttribute('required');
+            }
+
+            // Reset steps
+            document.querySelector('.main-step').style.display = 'block';
+            document.querySelector('.otp-step').style.display = 'none';
+            document.getElementById('errorMsg').style.display = 'none';
+        }
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const btn = document.getElementById('btn-login');
             const errorDiv = document.getElementById('errorMsg');
+            const btn = document.getElementById('btn-login');
 
-            if (!email) return;
+            if (!email) {
+                showError("Email is required");
+                return;
+            }
 
-            // Simple loading state
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '...';
             btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Checking...';
 
-            // Assuming standard password login for this design
-            const result = await Auth.login(email, password);
+            let result;
+            if (loginMode === 'password') {
+                result = await Auth.login(email, password);
+            } else {
+                result = await Auth.requestOTP(email, 'email');
+            }
 
             if (result.success) {
                 if (result.directLogin) {
-                    window.location.href = 'index.html';
+                    window.location.href = 'index.html'; // Direct login
                 } else {
-                    // Show OTP input if needed (hidden by default in this design but supported)
-                    document.getElementById('otp-container').style.display = 'block';
-                    btn.style.display = 'none'; // Hide main login, show OTP
+                    document.querySelector('.main-step').style.display = 'none';
+                    document.querySelector('.otp-step').style.display = 'block';
+                    errorDiv.style.display = 'none';
                 }
                 errorDiv.style.display = 'none';
             } else {
-                errorDiv.innerText = result.message || "Login failed";
-                errorDiv.style.display = 'block';
-                btn.innerHTML = originalText;
-                btn.disabled = false;
+                showError(result.message || "Login failed");
+
+                if (result.message && result.message.toLowerCase().includes("wait")) {
+                    startCooldown(60);
+                } else {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
             }
         });
 
+        function showError(msg) {
+            const errorDiv = document.getElementById('errorMsg');
+            errorDiv.innerHTML = `<i class="fas fa-exclamation-circle" style="margin-right: 5px;"></i> ${msg}`;
+            errorDiv.style.display = 'block';
+
+            // Shake effect
+            const card = document.querySelector('.glass-card');
+            card.animate([
+                { transform: 'translateX(0)' },
+                { transform: 'translateX(-10px)' },
+                { transform: 'translateX(10px)' },
+                { transform: 'translateX(0)' }
+            ], { duration: 300 });
+        }
+
+        function startCooldown(seconds) {
+            const btn = document.getElementById('btn-login');
+            btn.disabled = true;
+            let remaining = seconds;
+            const interval = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(interval);
+                    btn.disabled = false;
+                    btn.innerHTML = 'Continue <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>';
+                } else {
+                    btn.innerText = `Resend in ${remaining}s`;
+                }
+            }, 1000);
+        }
+
         async function verify2FA() {
             const code = document.getElementById('otp-code').value;
+
+            if (!code || code.length < 6) {
+                showError("Please enter the 6-digit code");
+                return;
+            }
+
             const res = await Auth.verifyOTP(code);
+
             if (res.success) {
                 window.location.href = 'index.html';
             } else {
-                alert(res.message || "Invalid OTP");
+                showError(res.message || "Invalid OTP");
             }
+        }
+
+        async function resendOTP(e) {
+            e.preventDefault();
+            const link = document.getElementById('resend-link');
+            if (link.style.opacity === '0.5') return; // Disabled
+
+            const email = document.getElementById('email').value;
+
+            // Visual feedback
+            const originalText = link.innerText;
+            link.innerText = "Sending...";
+            link.style.opacity = '0.5';
+            link.style.pointerEvents = 'none';
+
+            const res = await Auth.requestOTP(email, 'email');
+
+            if (res.success) {
+                showError("Code resent successfully! Check your inbox."); // Reusing error div for success simply
+                const errDiv = document.getElementById('errorMsg');
+                errDiv.style.background = 'rgba(0, 230, 118, 0.1)';
+                errDiv.style.borderColor = 'rgba(0, 230, 118, 0.2)';
+
+                // Start Cooldown
+                startResendCooldown(60, link);
+            } else {
+                showError(res.message || "Failed to resend");
+                link.innerText = "Resend";
+                link.style.opacity = '1';
+                link.style.pointerEvents = 'auto';
+            }
+        }
+
+        function startResendCooldown(seconds, link) {
+            let remaining = seconds;
+            link.innerText = `Resend in ${remaining}s`;
+
+            const interval = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(interval);
+                    link.innerText = "Resend";
+                    link.style.opacity = '1';
+                    link.style.pointerEvents = 'auto';
+                } else {
+                    link.innerText = `Resend in ${remaining}s`;
+                }
+            }, 1000);
         }
     </script>
 </body>
