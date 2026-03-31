@@ -302,10 +302,9 @@ async function sendEmail(to, subject, text, html = null) {
         console.log('OTP email sent');
         logger.info("EMAIL_SENT_SUCCESS", { to });
     } catch (err) {
-        console.error(err);
+        console.error("SENDGRID ERROR:", err.response ? err.response.body : err.message);
         logger.error("EMAIL_SEND_FAILURE", { error: err.message });
-        // Don't throw error - allow signup/login to continue
-        logger.warn("EMAIL_FAILED_BUT_CONTINUING", { to, codeInLogs: true });
+        throw new Error("Email delivery failed via SendGrid - your API key may be suspended.");
     }
 }
 
@@ -468,7 +467,7 @@ app.post("/login/request", async (req, res) => {
         });
     } catch (err) {
         logger.error("Login request failed", { error: err.message });
-        res.status(500).json({ error: "Failed to send email" });
+        res.status(500).json({ error: err.message || "Failed to send email" });
     }
 });
 
@@ -518,7 +517,7 @@ app.post(["/auth/otp/request", "/request-otp"], authLimiter, async (req, res) =>
         `);
         await sendEmail(email, "Your OTP Code", `Your OTP is ${otp}`, emailHtml);
         res.json({ ref, message: "OTP sent" });
-    } catch (err) { res.status(500).json({ error: "Failed" }); }
+    } catch (err) { res.status(500).json({ error: err.message || "Failed" }); }
 });
 
 /* -------------------- Password Reset -------------------- */
@@ -570,7 +569,7 @@ app.post("/api/auth/forgot-password", resetLimiter, async (req, res) => {
         res.json(responseData);
     } catch (err) {
         logger.error("Reset request failed", { error: err.message });
-        res.status(500).json({ error: "Server error" });
+        res.status(500).json({ error: err.message || "Server error" });
     }
 });
 
