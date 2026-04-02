@@ -138,11 +138,16 @@
 
             const res = await Auth.requestSignupVerification(email);
 
-            startCooldown(60);
-        } else {
-            btn.innerText = "Send Verification Code";
-            btn.disabled = false;
-        }
+            if (res.success) {
+                document.querySelector('.step-1').style.display = 'none';
+                document.querySelector('.step-2').style.display = 'block';
+                errorDiv.style.display = 'none';
+                startCooldown(60);
+            } else {
+                errorDiv.innerText = res.message || "Failed to send code";
+                errorDiv.style.display = 'block';
+                btn.innerText = "Send Verification Code";
+                btn.disabled = false;
             }
         }
 

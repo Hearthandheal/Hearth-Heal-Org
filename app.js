@@ -1,6 +1,6 @@
 /**
  * Hearth & Heal - Secure Backend
- * Logic: Email verification signup, 2FA OTP login, M-Pesa payments
+ * Logic: Email (Brevo) verification signup, 2FA OTP login, M-Pesa payments
  * Security: DB Persistence, Bcrypt Hashing, Rate Limiting, JWT Rotation, Helmet
  */
 
@@ -13,7 +13,6 @@ const cookieParser = require("cookie-parser");
 const crypto = require("crypto");
 const cron = require("node-cron");
 const winston = require("winston");
-const sgMail = require("@sendgrid/mail");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
@@ -69,32 +68,29 @@ app.get("/test-email", async (req, res) => {
     if (!email) return res.json({ error: "Please provide ?to=email@address.com" });
 
     try {
-        const msg = {
-            to: email,
-            from: ENV.EMAIL_FROM,
-            subject: "Test Email from Hearth & Heal",
-            text: "This is a test email to verify SendGrid configuration.",
-            html: "<strong>This is a test email</strong> to verify SendGrid configuration."
-        };
-
-        if (!ENV.SENDGRID_API_KEY) {
+        if (!ENV.BREVO_API_KEY) {
             return res.json({
                 status: "Simulation Mode",
-                message: "SENDGRID_API_KEY is missing in process.env",
+                message: "BREVO_API_KEY is missing in process.env",
                 env: {
-                    hasKey: !!ENV.SENDGRID_API_KEY,
+                    hasKey: !!ENV.BREVO_API_KEY,
                     emailFrom: ENV.EMAIL_FROM
                 }
             });
         }
 
-        await sgMail.send(msg);
-        res.json({ success: true, message: "Email sent successfully via SendGrid", from: ENV.EMAIL_FROM });
+        await sendEmail(
+            email,
+            "Test Email from Hearth & Heal",
+            "This is a test email to verify Brevo configuration.",
+            "<strong>This is a test email</strong> to verify Brevo configuration."
+        );
+        res.json({ success: true, message: "Email sent successfully via Brevo", from: ENV.EMAIL_FROM });
     } catch (err) {
         res.status(500).json({
-            error: "SendGrid Error",
+            error: "Brevo / email Error",
             message: err.message,
-            response: err.response ? err.response.body : "No response body"
+            response: err.response?.data ?? "No response body"
         });
     }
 });
@@ -108,7 +104,7 @@ db.initDb()
 const ENV = {
     PORT: process.env.PORT || 3000,
     BASE_URL: process.env.BASE_URL || "http://localhost:3000",
-    SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
+    BREVO_API_KEY: process.env.BREVO_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM || "hearthandhealorg@gmail.com",
     JWT_SECRETS: (process.env.JWT_SECRET || "default_h&h_secret").split(","),
     OTP_EXPIRY_MS: 5 * 60 * 1000,
@@ -122,11 +118,6 @@ const ENV = {
         ENV: process.env.MPESA_ENV || "sandbox" // 'sandbox' or 'production'
     }
 };
-
-// Initialize SendGrid
-if (ENV.SENDGRID_API_KEY) {
-    sgMail.setApiKey(ENV.SENDGRID_API_KEY);
-}
 
 function getMpesaBaseUrl() {
     return ENV.MPESA.ENV === "production"
@@ -275,36 +266,41 @@ function getEmailTemplate(title, bodyContent) {
     `;
 }
 
-// Send email function
+// Send email via Brevo transactional API (https://developers.brevo.com/reference/sendtransacemail)
 async function sendEmail(to, subject, text, html = null) {
-    // Always log to console for development/debugging
     logger.info("EMAIL_ATTEMPT", { to, subject });
 
-    if (!ENV.SENDGRID_API_KEY) {
-        logger.warn("SENDGRID_API_KEY_MISSING: Simulation mode active.", { to });
+    if (!ENV.BREVO_API_KEY) {
+        logger.warn("BREVO_API_KEY_MISSING: Simulation mode active.", { to });
         console.log(`\n=== [EMAIL SIMULATION] ===\nTo: ${to}\nSubject: ${subject}\nBody: ${text}\n========================\n`);
         return;
     }
 
-    const msg = {
-        to,
-        from: {
-            email: ENV.EMAIL_FROM,
-            name: "Hearth & Heal Security"
-        },
-        subject,
-        text,
-        html: html || text // Fallback to text if no HTML provided
-    };
-
     try {
-        await sgMail.send(msg);
-        console.log('OTP email sent');
+        await axios.post(
+            "https://api.brevo.com/v3/smtp/email",
+            {
+                sender: { name: "Hearth & Heal Security", email: ENV.EMAIL_FROM },
+                to: [{ email: to }],
+                subject,
+                textContent: text,
+                htmlContent: html || text
+            },
+            {
+                headers: {
+                    "api-key": ENV.BREVO_API_KEY,
+                    "Content-Type": "application/json",
+                    Accept: "application/json"
+                }
+            }
+        );
         logger.info("EMAIL_SENT_SUCCESS", { to });
     } catch (err) {
-        console.error("SENDGRID ERROR:", err.response ? err.response.body : err.message);
-        logger.error("EMAIL_SEND_FAILURE", { error: err.message });
-        throw new Error("Email delivery failed via SendGrid - your API key may be suspended.");
+        const detail = err.response?.data ?? err.message;
+        console.error("BREVO ERROR:", detail);
+        logger.error("EMAIL_SEND_FAILURE", { error: detail });
+        const msg = typeof detail === "object" ? JSON.stringify(detail) : String(detail);
+        throw new Error(`Email delivery failed (Brevo): ${msg}`);
     }
 }
 
@@ -372,7 +368,7 @@ app.post("/request-verification", authLimiter, async (req, res) => {
 
         // Dev/Sim
         const debugData = { ref, message: "Verification link sent" };
-        if (!ENV.SENDGRID_API_KEY) debugData.link = verifyLink;
+        if (!ENV.BREVO_API_KEY) debugData.link = verifyLink;
 
         res.json(debugData);
     } catch (err) {
@@ -564,7 +560,7 @@ app.post("/api/auth/forgot-password", resetLimiter, async (req, res) => {
 
         // Dev/Sim mode
         const responseData = { message: "If that email is in our database, we have sent a reset link to it." };
-        if (!ENV.SENDGRID_API_KEY) responseData.token = token;
+        if (!ENV.BREVO_API_KEY) responseData.token = token;
 
         res.json(responseData);
     } catch (err) {
