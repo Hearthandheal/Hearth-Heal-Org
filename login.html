@@ -147,6 +147,8 @@
     <script>
         let loginMode = 'password';
 
+        document.addEventListener('DOMContentLoaded', () => switchMode('password'));
+
         function switchMode(mode) {
             loginMode = mode;
             document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
@@ -179,6 +181,11 @@
                 return;
             }
 
+            if (loginMode === 'password' && !password.trim()) {
+                showError("Password is required");
+                return;
+            }
+
             btn.disabled = true;
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Checking...';
@@ -197,6 +204,8 @@
                     document.querySelector('.main-step').style.display = 'none';
                     document.querySelector('.otp-step').style.display = 'block';
                     errorDiv.style.display = 'none';
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
                 }
                 errorDiv.style.display = 'none';
             } else {
@@ -243,9 +252,9 @@
         }
 
         async function verify2FA() {
-            const code = document.getElementById('otp-code').value;
+            const code = document.getElementById('otp-code').value.replace(/\s/g, '');
 
-            if (!code || code.length < 6) {
+            if (!code || code.length !== 6) {
                 showError("Please enter the 6-digit code");
                 return;
             }

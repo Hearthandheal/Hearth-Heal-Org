@@ -85,12 +85,21 @@ const Auth = {
     // SIGNUP STEP 1
     requestSignupVerification: async (email) => {
         try {
+            const normalized = typeof email === 'string' ? email.trim().toLowerCase() : '';
+            if (!normalized) return { success: false, message: 'Email is required' };
+
             const response = await fetch(`${Auth.API_BASE}/request-verification`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
+                body: JSON.stringify({ email: normalized })
             });
-            const data = await response.json();
+            const text = await response.text();
+            let data = {};
+            try {
+                data = text ? JSON.parse(text) : {};
+            } catch {
+                return { success: false, message: 'Invalid server response' };
+            }
             if (response.ok) {
                 Auth._signupRef = data.ref;
                 Auth._signupEmail = email;
@@ -108,9 +117,19 @@ const Auth = {
             const response = await fetch(`${Auth.API_BASE}/verify-email`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ref: Auth._signupRef, code, password })
+                body: JSON.stringify({
+                    ref: Auth._signupRef,
+                    code: String(code ?? '').replace(/\s/g, ''),
+                    password
+                })
             });
-            const data = await response.json();
+            const text = await response.text();
+            let data = {};
+            try {
+                data = text ? JSON.parse(text) : {};
+            } catch {
+                return { success: false, message: 'Invalid server response' };
+            }
             if (response.ok) return { success: true };
             return { success: false, message: data.error };
         } catch (err) {
@@ -140,23 +159,30 @@ const Auth = {
             const response = await fetch(`${Auth.API_BASE}/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({
+                    email: typeof email === 'string' ? email.trim().toLowerCase() : '',
+                    password: typeof password === 'string' ? password : ''
+                })
             });
-            const data = await response.json();
+            const text = await response.text();
+            let data = {};
+            try {
+                data = text ? JSON.parse(text) : {};
+            } catch {
+                return { success: false, message: 'Invalid server response' };
+            }
             if (response.ok) {
-                // Direct login success (Password flow)
-                if (data.token) {
+                if (data.token && data.user) {
                     Auth.setToken(data.token);
                     Auth.setCurrentUser(data.user);
                     return { success: true, directLogin: true };
                 }
 
-                // Fallback (if API changes back)
                 Auth._loginRef = data.ref;
                 Auth._loginEmail = email;
                 return { success: true, directLogin: false };
             }
-            return { success: false, message: data.error };
+            return { success: false, message: data.error || 'Login failed' };
         } catch (err) {
             return { success: false, message: 'Server unreachable' };
         }
@@ -222,12 +248,21 @@ const Auth = {
     // OTP REQUEST (Direct)
     requestOTP: async (identifier) => {
         try {
+            const email = typeof identifier === 'string' ? identifier.trim().toLowerCase() : '';
+            if (!email) return { success: false, message: 'Email is required' };
+
             const response = await fetch(`${Auth.API_BASE}/login/request`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: identifier })
+                body: JSON.stringify({ email })
             });
-            const data = await response.json();
+            const text = await response.text();
+            let data = {};
+            try {
+                data = text ? JSON.parse(text) : {};
+            } catch {
+                return { success: false, message: 'Invalid server response' };
+            }
             if (response.ok) {
                 Auth._loginRef = data.ref;
                 // For development, you can see the code in the response

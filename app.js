@@ -119,6 +119,13 @@ const ENV = {
     }
 };
 
+const COOKIE_SECURE = process.env.NODE_ENV === "production";
+
+function normalizeEmail(email) {
+    if (email == null || typeof email !== "string") return "";
+    return email.trim().toLowerCase();
+}
+
 function getMpesaBaseUrl() {
     return ENV.MPESA.ENV === "production"
         ? "https://api.safaricom.co.ke"
@@ -336,14 +343,17 @@ const resetLimiter = rateLimit({
 
 app.post("/request-verification", authLimiter, async (req, res) => {
     try {
-        const { email } = req.body;
-        if (!email || typeof email !== "string") {
+        const email = normalizeEmail(req.body.email);
+        if (!email) {
             return res.status(400).json({ error: "Valid email required" });
         }
 
         // Check 1-minute cooldown
         const duration = 60 * 60 * 1000; // 1 hour expiry as requested
-        const recent = await db.query(`SELECT * FROM verifications WHERE identifier = ? AND expires_at > ? ORDER BY expires_at DESC LIMIT 1`, [email, Date.now() + duration - 60000]);
+        const recent = await db.query(
+            `SELECT * FROM verifications WHERE LOWER(identifier) = ? AND expires_at > ? ORDER BY expires_at DESC LIMIT 1`,
+            [email, Date.now() + duration - 60000]
+        );
         if (recent[0]) return res.status(429).json({ error: "Please wait 1 minute before requesting another email." });
 
         const otp = generateOtp();
@@ -386,18 +396,24 @@ app.post("/request-verification", authLimiter, async (req, res) => {
 app.post("/verify-email", authLimiter, async (req, res) => {
     try {
         const { ref, code, password } = req.body;
+        const pwd = typeof password === "string" ? password : "";
+        if (pwd.length < 6) {
+            return res.status(400).json({ error: "Password must be at least 6 characters" });
+        }
+
         const records = await db.query(`SELECT * FROM verifications WHERE ref = ?`, [ref]);
         const record = records[0];
 
         if (!record || Date.now() > record.expires_at) return res.status(400).json({ error: "Invalid or expired code" });
-        const validCode = await bcrypt.compare(code, record.code_hash);
+        const validCode = await bcrypt.compare(String(code), record.code_hash);
         if (!validCode) return res.status(400).json({ error: "Invalid code" });
 
-        const passwordHash = await bcrypt.hash(password, 12);
+        const identifier = normalizeEmail(record.identifier);
+        const passwordHash = await bcrypt.hash(pwd, 12);
         await db.run(
             `INSERT INTO users (identifier, password_hash, verified) VALUES (?, ?, TRUE) 
              ON CONFLICT(identifier) DO UPDATE SET password_hash = ?, verified = TRUE`,
-            [record.identifier, passwordHash, passwordHash]
+            [identifier, passwordHash, passwordHash]
         );
         await db.run(`DELETE FROM verifications WHERE ref = ?`, [ref]);
 
@@ -410,12 +426,16 @@ app.post("/verify-email", authLimiter, async (req, res) => {
 
 app.post("/login", authLimiter, async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const email = normalizeEmail(req.body.email);
+        const password = typeof req.body.password === "string" ? req.body.password : "";
         if (!email || !password) {
             return res.status(400).json({ error: "Email and password required" });
         }
 
-        const users = await db.query(`SELECT * FROM users WHERE identifier = ? AND verified = TRUE`, [email]);
+        const users = await db.query(
+            `SELECT * FROM users WHERE LOWER(identifier) = ? AND verified = TRUE`,
+            [email]
+        );
         const user = users[0];
 
         const validPass = user && user.password_hash ? await bcrypt.compare(password, user.password_hash) : false;
@@ -430,12 +450,12 @@ app.post("/login", authLimiter, async (req, res) => {
         // Set HttpOnly Cookie
         res.cookie("token", token, {
             httpOnly: true,
-            secure: true,
+            secure: COOKIE_SECURE,
             sameSite: "Strict",
             maxAge: 24 * 60 * 60 * 1000 // 1 day
         });
 
-        res.json({ success: true, token, user: { email: user.identifier, verified: user.verified } });
+        res.json({ success: true, token, user: { email: user.identifier, verified: !!user.verified } });
     } catch (err) {
         logger.error("Login attempt failed", { error: err.message });
         res.status(500).json({ error: err.message || "Server error" });
@@ -444,12 +464,24 @@ app.post("/login", authLimiter, async (req, res) => {
 
 // Request verification code (Unified pathway)
 app.post("/login/request", async (req, res) => {
-    const { email } = req.body;
+    const email = normalizeEmail(req.body.email);
+    if (!email) {
+        return res.status(400).json({ error: "Valid email required" });
+    }
+
     const code = generateOtp();
     const ref = getUuid();
     const codeHash = await bcrypt.hash(code, 12);
 
     try {
+        const users = await db.query(
+            `SELECT * FROM users WHERE LOWER(identifier) = ? AND verified = TRUE`,
+            [email]
+        );
+        if (!users[0]) {
+            return res.status(400).json({ error: "No account found for this email. Sign up first." });
+        }
+
         // Save to DB so it can be verified via /verify-otp
         await db.run(
             `INSERT INTO otps (ref, otp_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`,
@@ -475,7 +507,8 @@ app.post("/login/request", async (req, res) => {
 
 app.post(["/auth/otp/verify", "/verify-otp"], authLimiter, async (req, res) => {
     try {
-        const { ref, otp } = req.body;
+        const { ref } = req.body;
+        const otp = String(req.body.otp ?? "").replace(/\s/g, "");
         if (!ref || !otp) return res.status(400).json({ error: "Reference and OTP required" });
 
         const records = await db.query(`SELECT * FROM otps WHERE ref = ?`, [ref]);
@@ -491,7 +524,7 @@ app.post(["/auth/otp/verify", "/verify-otp"], authLimiter, async (req, res) => {
         // Set HttpOnly Cookie
         res.cookie("token", token, {
             httpOnly: true,
-            secure: true,
+            secure: COOKIE_SECURE,
             sameSite: "Strict",
             maxAge: 24 * 60 * 60 * 1000 // 1 day
         });
@@ -505,8 +538,13 @@ app.post(["/auth/otp/verify", "/verify-otp"], authLimiter, async (req, res) => {
 
 app.post(["/auth/otp/request", "/request-otp"], authLimiter, async (req, res) => {
     try {
-        const { email } = req.body;
-        const recent = await db.query(`SELECT * FROM otps WHERE identifier = ? AND (expires_at - ?) > ? ORDER BY expires_at DESC LIMIT 1`, [email, ENV.OTP_EXPIRY_MS, Date.now() - 60000]);
+        const email = normalizeEmail(req.body.email);
+        if (!email) return res.status(400).json({ error: "Valid email required" });
+
+        const recent = await db.query(
+            `SELECT * FROM otps WHERE LOWER(identifier) = ? AND (expires_at - ?) > ? ORDER BY expires_at DESC LIMIT 1`,
+            [email, ENV.OTP_EXPIRY_MS, Date.now() - 60000]
+        );
         if (recent[0]) return res.status(429).json({ error: "OTP already sent. Please wait 1 minute." });
 
         const otp = generateOtp();
@@ -526,10 +564,13 @@ app.post(["/auth/otp/request", "/request-otp"], authLimiter, async (req, res) =>
 // STEP 1: Request reset code
 app.post("/api/auth/forgot-password", resetLimiter, async (req, res) => {
     try {
-        const { email } = req.body;
+        const email = normalizeEmail(req.body.email);
         if (!email) return res.status(400).json({ error: "Email required" });
 
-        const users = await db.query(`SELECT * FROM users WHERE identifier = ? AND verified = TRUE`, [email]);
+        const users = await db.query(
+            `SELECT * FROM users WHERE LOWER(identifier) = ? AND verified = TRUE`,
+            [email]
+        );
         if (users.length === 0) {
             // Audit failed attempt but return success to prevent user enumeration
             audit("PASSWORD_RESET_REQUEST_FAILED", { email, reason: "NOT_FOUND" });
@@ -538,7 +579,10 @@ app.post("/api/auth/forgot-password", resetLimiter, async (req, res) => {
 
         // Check 1-minute cooldown for Reset to prevent spamming
         const duration = 2 * 60 * 1000; // 2 minutes expiry as requested
-        const recent = await db.query(`SELECT * FROM password_resets WHERE identifier = ? AND (expires_at - ?) > ? ORDER BY expires_at DESC LIMIT 1`, [email, duration, Date.now() - 60000]);
+        const recent = await db.query(
+            `SELECT * FROM password_resets WHERE LOWER(identifier) = ? AND (expires_at - ?) > ? ORDER BY expires_at DESC LIMIT 1`,
+            [email, duration, Date.now() - 60000]
+        );
         if (recent[0]) return res.json({ message: "If that email is in our database, we have sent a reset link to it." }); // Ambiguous success
 
         const token = crypto.randomBytes(32).toString("hex"); // Use token-style string as requested
