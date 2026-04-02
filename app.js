@@ -346,25 +346,31 @@ app.post("/request-verification", authLimiter, async (req, res) => {
         const recent = await db.query(`SELECT * FROM verifications WHERE identifier = ? AND expires_at > ? ORDER BY expires_at DESC LIMIT 1`, [email, Date.now() + duration - 60000]);
         if (recent[0]) return res.status(429).json({ error: "Please wait 1 minute before requesting another email." });
 
-        const token = crypto.randomBytes(32).toString("hex"); // 32-byte hex token
+        const otp = generateOtp();
         const ref = getUuid();
-        const codeHash = await bcrypt.hash(token, 12);
+        const codeHash = await bcrypt.hash(otp, 12);
 
         await db.run(
             `INSERT INTO verifications (ref, code_hash, identifier, expires_at) VALUES (?, ?, ?, ?)`,
             [ref, codeHash, email, Date.now() + duration]
         );
 
-        const verifyLink = `${ENV.BASE_URL}/verify-email.html?ref=${ref}&token=${token}`;
+        const verifyLink = `${ENV.BASE_URL}/verify-email.html?ref=${encodeURIComponent(ref)}&token=${encodeURIComponent(otp)}`;
 
         const emailHtml = getEmailTemplate("Verify Your Email", `
-            <p>Welcome to Hearth & Heal! Please confirm your email address to continue.</p>
+            <p>Welcome to Hearth & Heal! Use this code on the signup page, or tap the button below to verify in one step.</p>
+            <div class="otp-code">${otp}</div>
             <div style="text-align: center; margin: 20px 0;">
                 <a href="${verifyLink}" style="background-color: #00E676; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verify Email</a>
             </div>
-            <p style="text-align: center; font-size: 12px; color: #666;">Link expires in 1 hour.</p>
+            <p style="text-align: center; font-size: 12px; color: #666;">Code and link expire in 1 hour.</p>
         `);
-        await sendEmail(email, "Verify Your Account", `Click here: ${verifyLink}`, emailHtml);
+        await sendEmail(
+            email,
+            "Verify Your Account",
+            `Your Hearth & Heal verification code is ${otp}. Or open: ${verifyLink}`,
+            emailHtml
+        );
 
         // Dev/Sim
         const debugData = { ref, message: "Verification link sent" };

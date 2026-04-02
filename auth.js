@@ -23,7 +23,7 @@ const Auth = {
 
         const authPages = ['login.html', 'signup.html', 'forgot-password.html'];
         // Pages that are accessible without login (Homepage, Mission, Contact, Services, Donate)
-        const publicPages = ['index.html', 'mission.html', 'contact.html', 'services.html', 'donate.html'];
+        const publicPages = ['index.html', 'mission.html', 'contact.html', 'services.html', 'donate.html', 'verify-email.html'];
 
         console.log(`[Auth] Checking access for: ${pageName}. Logged in: ${!!currentUser}`);
 
@@ -46,7 +46,14 @@ const Auth = {
         }
     },
 
-    getCurrentUser: () => JSON.parse(localStorage.getItem(Auth.CURRENT_USER_KEY)),
+    getCurrentUser: () => {
+        try {
+            const raw = localStorage.getItem(Auth.CURRENT_USER_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    },
     setCurrentUser: (user) => localStorage.setItem(Auth.CURRENT_USER_KEY, JSON.stringify(user)),
     setToken: (token) => localStorage.setItem(Auth.JWT_KEY, token),
     logout: () => {
