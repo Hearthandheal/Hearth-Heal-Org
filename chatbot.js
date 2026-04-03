@@ -1,7 +1,7 @@
 /**
  * Olaf - Wellness Companion Chatbot
  * Hearth & Heal Organization
- * Expanded Knowledge Base & Intelligence
+ * Knowledge-backed answers (phrase + keyword scoring)
  */
 
 const chatbotHTML = `
@@ -13,19 +13,19 @@ const chatbotHTML = `
                     <h3>⛄ Olaf</h3>
                     <p>Wellness Companion</p>
                 </div>
-                <button id="close-chat" aria-label="Close Chat">&times;</button>
+                <button type="button" id="close-chat" aria-label="Close Chat">&times;</button>
             </div>
             <div id="chat-log"></div>
             <div class="chat-input-area">
-                <input id="chat-input" type="text" placeholder="I like warm hugs! Say hi..." />
-                <button id="send-btn" aria-label="Send Message"><i data-feather="send"></i></button>
+                <input id="chat-input" type="text" placeholder="Ask about Hearth & Heal..." autocomplete="off" />
+                <button type="button" id="send-btn" aria-label="Send Message"><i data-feather="send"></i></button>
             </div>
         </div>
     </div>
-    <div id="olaf-trigger" title="Chat with Olaf">
+    <button type="button" id="olaf-trigger" title="Chat with Olaf">
         <img src="assets/olaf_chatbot.jpg" alt="Olaf Character">
-        <div class="olaf-status"></div>
-    </div>
+        <span class="olaf-status" aria-hidden="true"></span>
+    </button>
 </div>
 `;
 
@@ -39,7 +39,6 @@ const chatbotStyles = `
     font-family: 'Outfit', sans-serif;
   }
 
-  /* Trigger Button */
   #olaf-trigger {
     width: 85px;
     height: 85px;
@@ -82,7 +81,6 @@ const chatbotStyles = `
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   }
 
-  /* Chat Widget */
   #olaf-widget {
     display: none;
     width: 380px;
@@ -158,7 +156,7 @@ const chatbotStyles = `
   }
 
   .chat-msg {
-    max-width: 80%;
+    max-width: 85%;
     padding: 14px 18px;
     border-radius: 20px;
     font-size: 0.95rem;
@@ -176,6 +174,8 @@ const chatbotStyles = `
     border: 1px solid #f0f0f0;
   }
 
+  .msg-ai a { color: #00C853; font-weight: 600; }
+
   .msg-user {
     align-self: flex-end;
     background: #00C853;
@@ -191,12 +191,12 @@ const chatbotStyles = `
       background: #aaa;
       border-radius: 50%;
       margin: 0 1px;
-      animation: typing 1.4s infinite both;
+      animation: olafTyping 1.4s infinite both;
   }
   .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
   .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
 
-  @keyframes typing {
+  @keyframes olafTyping {
       0%, 80%, 100% { opacity: 0; transform: translateY(0); }
       40% { opacity: 1; transform: translateY(-5px); }
   }
@@ -250,96 +250,317 @@ const chatbotStyles = `
 
   #send-btn svg { width: 22px; height: 22px; }
 
-  /* Mobile Tweaks */
   @media (max-width: 480px) {
-    #olaf-widget { width: 90vw; right: -10vw; position: relative; }
+    #olaf-widget { width: 90vw; max-width: 100%; }
     #olaf-container { bottom: 20px; right: 20px; }
   }
 </style>
 `;
 
-// --- OLAF KNOWLEDGE ---
-const olafBrain = {
-  greetings: [
-    "Hi! I'm Olaf and I like warm hugs! 🤗",
-    "Hello there! Isn't it a lovely day for starting over? ✨",
-    "Look at me! I'm a talking snowman! ☃️",
-    "Good morning! Or evening! I don't have a watch, but I have a carrot! 🥕"
-  ],
-  personality: ["warm hugs", "summer", "melting", "happiness", "joy", "friends", "reindeer", "carrot", "love"],
-  context: {
-    mission: "Hearth & Heal exists to provide a safe, inclusive, and restorative environment for individuals navigating personal adversity and social marginalization. 💚",
-    vision: "Our vision is to heal the world and make it habitable for every individual. That's a lot of hugs! 🌍",
-    quote: "\"We don’t chase flawless outcomes – We pursue wholeness, grace, and the courage to begin again.\"",
-    leadership: "We're lead by our Founder & CEO, <b>Mr. John Haggee Ouma</b>. He's also an author! 🌟",
-    values: [
-      "Compassion over Judgement",
-      "Truth Rooted in God’s Word",
-      "Dignity for Every Individual",
-      "Healing Through Community",
-      "Empowerment Through Self-Help"
-    ],
-    services: {
-      "spiritual care": "Guided reflections, prayer circles, and spiritual companionship to nourish your soul. ⚓",
-      "creative healing": "I LOVE this! Expressive arts, bonfires, dance, and music therapy. It's so much fun! 🎨🔥",
-      "recovery room": "A safe place for facilitated conversations and unpacking life's heavy ordeals. 🛋️",
-      "literature": "We have books and workshops! Writing can be so healing for the heart. 📚",
-      "resource navigation": "We help with basic needs like food and shelter, plus legal aid navigation. 🧭",
-      "sensitization": "Awareness workshops and civic education to help societies function better! 📢"
-    },
-    shop: {
-      book: "Our CEO wrote a wonderful book: <b>'I Chose To Let You Down'</b> (KSH 1,000). It's about the route from heartbreak to healing. 📖",
-      apparel: "We have branded Hoodies (KSH 2,500), Sweatshirts (KSH 2,000), T-Shirts (KSH 750), and Polo Shirts (KSH 1,000)! They all come in both <b>Black and White</b>. 👕",
-      accessories: "We have Headbands (KSH 500), Scarves (KSH 600), and Baseball Caps (KSH 500)! Available in <b>Black and White</b> too. 🧢"
-    },
-    donation: {
-      impact: "Every bit helps! KSH 1,000 provides materials, KSH 5,000 supports a group session, and KSH 25,000 rents a safe space for an entire month! 💖",
-      methods: "You can use PayPal, M-Pesa (Paybill: 123456, Acc: HEARTH), or Bank Transfer! Check the <a href='donate.html'>Donate</a> page for details."
-    },
-    contact: {
-      email: "hello@hearthandheal.org",
-      whatsapp: "254114433429",
-      socials: "Find us on TikTok (@hearth.heal.org), Instagram, YouTube, and Facebook! 📱"
+function olafLink(href, text) {
+  return `<a href="${href}">${text}</a>`;
+}
+
+const OLAF_GREETINGS = [
+  "Hi! I'm Olaf, Hearth & Heal's wellness companion. I like warm hugs too! 🤗",
+  "Hello! Ready to talk about healing, hope, and our community? ✨",
+  "Hey there! Ask me anything about Hearth & Heal — mission, services, shop, donations, or the team. ☃️"
+];
+
+/**
+ * Each entry: phrases (substring, higher weight), words (token overlap), reply (HTML)
+ */
+const OLAF_KNOWLEDGE = [
+  {
+    phrases: ["what is hearth", "who is hearth", "about hearth", "tell me about hearth", "hearth and heal", "hearth & heal"],
+    words: ["organization", "nonprofit", "charity", "ngo", "who are you"],
+    reply: `<b>Hearth & Heal</b> is a restorative community organization grounded in faith and compassion. We create safe, inclusive spaces for people facing adversity, relational strain, or marginalization — through spiritual care, creative healing, practical support, and education. Explore our ${olafLink("mission.html", "Mission")} or ${olafLink("services.html", "Services")}. 💚`
+  },
+  {
+    phrases: ["our vision", "your vision", "what is your vision"],
+    words: ["vision"],
+    reply: `Our vision: <b>“To heal the world and make it habitable for every individual.”</b> We work to correct dysfunctions that keep people, families, and societies from living with wholeness and dignity as intended. 🌍 More on ${olafLink("mission.html", "Our Mission")}.`
+  },
+  {
+    phrases: ["our mission", "your mission", "what is your mission"],
+    words: ["mission"],
+    reply: `Our mission: <b>Hearth & Heal exists to provide a safe, inclusive, and restorative environment for individuals navigating personal adversity, relational dysfunction and social marginalization.</b> We offer judgement-free support, dialogue, and practical guidance rooted in scripture. 📖 See ${olafLink("mission.html", "Mission")}.`
+  },
+  {
+    phrases: ["flawless", "wholeness", "begin again", "courage to begin"],
+    words: ["quote", "motto", "slogan"],
+    reply: `A line we love: <i>“We don’t chase flawless outcomes – We pursue wholeness, grace, and the courage to begin again.”</i> ✨ It's on our ${olafLink("mission.html", "Mission")} page.`
+  },
+  {
+    phrases: ["core values", "your values", "what do you stand for", "what do you believe"],
+    words: ["values", "principles", "ethos"],
+    reply: `Our values include: <b>Compassion over Judgement</b>, <b>Truth Rooted in God’s Word</b>, <b>Dignity for Every Individual</b>, <b>Healing Through Community</b>, and <b>Empowerment Through Self-Help</b>. 🤝 Details on ${olafLink("mission.html", "Mission")}.`
+  },
+  {
+    phrases: ["what services", "what do you offer", "programs", "help me", "how can you help"],
+    words: ["services", "programs", "offerings", "support", "care"],
+    reply: `We offer <b>Spiritual Care</b>, <b>Literature & Authorship</b>, <b>Creative Healing</b>, <b>Recovery Room</b> conversations, <b>Resource Navigation</b> (needs, legal aid, outreach), and <b>Dysfunctionality Sensitization</b> (workshops, civic education, mental health awareness). Delivery includes in-person gatherings, digital soul care, podcasts, conferences, and more. Full list: ${olafLink("services.html", "Our Services")}. 🌿`
+  },
+  {
+    phrases: ["spiritual care", "prayer circle", "grief support"],
+    words: ["spiritual", "prayer", "grief", "pastoral"],
+    reply: `<b>Spiritual Care</b> includes guided reflections, prayer circles, grief support, and spiritual companionship — nourishing the soul through faith-centered presence. ⚓ More: ${olafLink("services.html", "Services")}.`
+  },
+  {
+    phrases: ["literature and", "writing workshop", "author", "books blogs"],
+    words: ["literature", "writing", "read", "book club"],
+    reply: `<b>Literature & Authorship</b> covers published books and articles, spiritual essays, live readings, and writing-as-healing workshops. 📚 Our CEO is also an author — see the ${olafLink("shop.html", "Shop")} for his book.`
+  },
+  {
+    phrases: ["creative healing", "expressive arts", "music therapy", "retreat"],
+    words: ["creative", "art", "dance", "music", "bonfire", "retreats"],
+    reply: `<b>Creative Healing</b> includes workshops, retreats, visual storytelling, expressive arts, bonfires, dance, and musical therapy — healing through creativity and community. 🎨 ${olafLink("services.html", "Services")}`
+  },
+  {
+    phrases: ["recovery room", "safe space", "facilitated conversation"],
+    words: ["recovery", "therapy", "confession", "unpack"],
+    reply: `The <b>Recovery Room</b> offers facilitated conversations, storytelling, space to unpack hard experiences, and support around guilt and confession — judgement-free. 🛋️ ${olafLink("services.html", "Services")}`
+  },
+  {
+    phrases: ["resource navigation", "food shelter", "legal aid", "marginalized"],
+    words: ["resources", "housing", "food", "legal", "outreach"],
+    reply: `<b>Resource Navigation</b> helps with basic needs (food, shelter), legal aid connections, outreach to marginalized neighbors, and community programs. 🧭 ${olafLink("services.html", "Services")}`
+  },
+  {
+    phrases: ["sensitization", "civic education", "mental health awareness", "institutional audit"],
+    words: ["awareness", "workshop", "campaign", "dysfunction"],
+    reply: `<b>Dysfunctionality Sensitization</b> includes awareness workshops, social campaigns, institutional audits, civic education, and mental health awareness — so communities can function with more clarity and care. 📢 ${olafLink("services.html", "Services")}`
+  },
+  {
+    phrases: ["modes of delivery", "how are services delivered", "in person", "digital space", "podcast"],
+    words: ["delivery", "online", "virtual", "conference", "broadcast"],
+    reply: `We deliver care through <b>in-person gatherings</b>, <b>digital soul care</b>, literature, creative commissions, <b>podcasts</b>, live broadcasts, conferences, and referral networks. 🎙️ See ${olafLink("services.html", "Services")}.`
+  },
+  {
+    phrases: ["john haggee", "ceo", "founder", "chief executive", "who leads"],
+    words: ["john", "ouma", "leader", "founder"],
+    reply: `Our <b>Founder & CEO is Mr. John Haggee Ouma</b> — he leads strategy and growth and is the author of <b>“I Chose To Let You Down.”</b> Meet the team on ${olafLink("mission.html", "Our Mission")}. 🌟`
+  },
+  {
+    phrases: ["faith emusugut", "secretary general"],
+    words: ["secretary", "faith", "administration"],
+    reply: `<b>Ms. Faith Emusugut</b> is our <b>Secretary General</b>, overseeing administration, compliance, and organizational efficiency. 📋 ${olafLink("mission.html", "Team")}`
+  },
+  {
+    phrases: ["graham ouma", "publications editor"],
+    words: ["publications", "editor", "graham"],
+    reply: `<b>Mr. Graham Ouma</b> is our <b>Publications Editor</b>, shaping written content for clarity and impact. ✍️ ${olafLink("mission.html", "Team")}`
+  },
+  {
+    phrases: ["angela elijah", "events manager"],
+    words: ["events", "angela", "workshops"],
+    reply: `<b>Ms. Angela Elijah</b> is our <b>Events Manager</b>, coordinating gatherings and wellness workshops. 🎉 ${olafLink("mission.html", "Team")}`
+  },
+  {
+    phrases: ["sarah gacoki", "merchandise"],
+    words: ["inventory", "sarah", "shop handler"],
+    reply: `<b>Ms. Sarah Gacoki</b> handles <b>merchandise</b> — shop inventory and getting quality goods to supporters. 🛒 ${olafLink("shop.html", "Shop")}`
+  },
+  {
+    phrases: ["emmanuel letoiya", "esther atieno", "marketing"],
+    words: ["marketing", "partnerships", "emmanuel", "esther"],
+    reply: `Our reach grows through <b>External Marketing</b> (Mr. Emmanuel K. Letoiya — partnerships) and <b>Internal Marketing</b> (Ms. Esther Atieno). 📣 ${olafLink("mission.html", "Team")}`
+  },
+  {
+    phrases: ["who is olaf", "your job", "mascot", "wellness companion"],
+    words: ["olaf", "snowman"],
+    reply: `That's me! I'm <b>Olaf</b>, the team's <b>Wellness Companion</b> — here to spread a little joy and help you find information about Hearth & Heal. Ask me about donations, services, or the shop anytime! ⛄`
+  },
+  {
+    phrases: ["team", "staff", "meet the team", "who works"],
+    words: ["employees", "people", "board"],
+    reply: `Meet our leadership and team — CEO John Haggee Ouma, Secretary General Faith Emusugut, Publications Editor Graham Ouma, Events Manager Angela Elijah, Merchandise Handler Sarah Gacoki, marketing leads, and more — on ${olafLink("mission.html", "Our Mission")}. 👥`
+  },
+  {
+    phrases: ["volunteer", "get involved", "join", "partner"],
+    words: ["help out", "contribute time"],
+    reply: `We love people who want to get involved! Reach out via ${olafLink("contact.html", "Get Involved / Contact")}, email <b>hello@hearthandheal.org</b>, or WhatsApp <b>+254 114 433 429</b>. You can also ${olafLink("donate.html", "donate")} or ${olafLink("shop.html", "shop")} to support the mission. 🤝`
+  },
+  {
+    phrases: ["where are you located", "address", "office", "location"],
+    words: ["location", "map", "visit"],
+    reply: `Our contact page lists <b>123 Wellness Way, Serenity City</b> (as shown on the site), plus email and phone. For the latest details or to coordinate a visit, use ${olafLink("contact.html", "Contact")}. 📍`
+  },
+  {
+    phrases: ["shop", "buy merch", "merchandise", "order", "hoodie", "t-shirt", "prices"],
+    words: ["store", "purchase", "apparel", "clothing", "cap", "scarf"],
+    reply: `Our ${olafLink("shop.html", "Shop")} supports the mission with branded items — e.g. <b>Hoodies KSH 2,500</b>, <b>Sweatshirts KSH 2,000</b>, <b>T-Shirts KSH 750</b>, <b>Polo KSH 1,000</b>, headbands, scarves, caps (often in black & white), plus the CEO's book <b>“I Chose To Let You Down”</b> around <b>KSH 1,000</b>. Open the shop for sizes, colors, and checkout. 🛍️`
+  },
+  {
+    phrases: ["book title", "i chose to let you down", "ceo book"],
+    words: ["heartbreak", "healing book"],
+    reply: `Our CEO wrote <b>“I Chose To Let You Down”</b> — a journey from heartbreak toward healing (about <b>KSH 1,000</b>). Find it in the ${olafLink("shop.html", "Shop")}. 📖`
+  },
+  {
+    phrases: ["donate", "donation", "give money", "support financially", "fund"],
+    words: ["giving", "contribute", "sponsor"],
+    reply: `Thank you for caring! 💖 <b>M-Pesa (Till)</b>: <b>3028117</b> — use <b>Buy Goods and Services</b>, account name <b>Hearth&Heal</b> (see ${olafLink("donate.html", "Donate")} for steps). <b>Bank</b>: <b>Equity Bank</b>, account name <b>Hearth and Heal Org</b> (account number on the donate page). Every gift helps materials, sessions, and safe spaces for community healing.`
+  },
+  {
+    phrases: ["mpesa", "till number", "lipa na mpesa", "mobile money"],
+    words: ["safaricom", "pesapal"],
+    reply: `For <b>M-Pesa</b>: Till <b>3028117</b>. Go to <b>Lipa na M-Pesa → Buy Goods and Services</b>, enter the till, amount, and PIN. Account name shown on our site: <b>Hearth&Heal</b>. 📱 Full steps: ${olafLink("donate.html", "Donate")}.`
+  },
+  {
+    phrases: ["bank transfer", "equity bank", "account number"],
+    words: ["wire", "eft", "bank deposit"],
+    reply: `We accept <b>bank transfers</b> to <b>Equity Bank</b>, account name <b>Hearth and Heal Org</b>. The account number is listed on ${olafLink("donate.html", "Donate")} — please double-check there before transferring. 🏦`
+  },
+  {
+    phrases: ["contact", "email", "whatsapp", "phone", "reach you", "social media"],
+    words: ["instagram", "facebook", "tiktok", "youtube", "twitter", "message"],
+    reply: `Email <b>hello@hearthandheal.org</b>, WhatsApp <b>+254 114 433 429</b>, and find us on <b>TikTok @hearth.heal.org</b>, Instagram, Facebook, X (Twitter), Pinterest, and YouTube — same handles as on our pages. ${olafLink("contact.html", "Contact")} 📱`
+  },
+  {
+    phrases: ["login", "sign up", "account", "password", "register", "member"],
+    words: ["cart", "checkout", "profile"],
+    reply: `Use ${olafLink("login.html", "Login")} for your account (password or email code). New here? ${olafLink("signup.html", "Create an account")}. The ${olafLink("shop.html", "Shop")} and ${olafLink("cart.html", "Cart")} use your session for orders. 🔐`
+  },
+  {
+    phrases: ["website", "privacy", "policy"],
+    words: ["site", "cookies"],
+    reply: `You're on the official Hearth & Heal site. Quick links: ${olafLink("index.html", "Home")}, ${olafLink("mission.html", "Mission")}, ${olafLink("services.html", "Services")}, ${olafLink("donate.html", "Donate")}. Privacy policy link is in the footer when available. 🌐`
+  }
+];
+
+function normalizeOlafQuery(raw) {
+  return String(raw || "")
+    .toLowerCase()
+    .replace(/[\u2019']/g, "'")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function olafTokens(norm) {
+  const set = new Set();
+  norm.split(" ").forEach((w) => {
+    if (w.length > 1) set.add(w);
+  });
+  return set;
+}
+
+function scoreOlafEntry(norm, tokens, entry) {
+  let score = 0;
+  const phrases = entry.phrases || [];
+  const words = entry.words || [];
+
+  for (let i = 0; i < phrases.length; i++) {
+    const p = phrases[i];
+    if (norm.includes(p)) score += 6 + Math.min(p.length, 40) * 0.08;
+  }
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    if (w.length > 2 && norm.includes(w)) score += 2.2;
+    else if (tokens.has(w)) score += 1.4;
+  }
+  return score;
+}
+
+function pickOlafReply(norm, tokens) {
+  let best = null;
+  let bestScore = 0;
+
+  for (let i = 0; i < OLAF_KNOWLEDGE.length; i++) {
+    const s = scoreOlafEntry(norm, tokens, OLAF_KNOWLEDGE[i]);
+    if (s > bestScore) {
+      bestScore = s;
+      best = OLAF_KNOWLEDGE[i].reply;
     }
   }
-};
 
-document.addEventListener('DOMContentLoaded', () => {
-  // 1. Setup
-  document.body.insertAdjacentHTML('beforeend', chatbotHTML);
-  document.head.insertAdjacentHTML('beforeend', chatbotStyles);
+  if (bestScore >= 4) return best;
+  if (bestScore >= 2.5) return best;
+
+  /* Combine top two weak hits */
+  const ranked = OLAF_KNOWLEDGE.map((e) => ({
+    s: scoreOlafEntry(norm, tokens, e),
+    reply: e.reply
+  }))
+    .filter((x) => x.s >= 1.2)
+    .sort((a, b) => b.s - a.s)
+    .slice(0, 2);
+
+  if (ranked.length === 2) {
+    return `${ranked[0].reply}<br><br><b>Related:</b><br>${ranked[1].reply}`;
+  }
+  if (ranked.length === 1) return ranked[0].reply;
+
+  return null;
+}
+
+function olafEmotional(norm) {
+  if (/\b(suicid|kill myself|end my life)\b/.test(norm)) {
+    return `I'm really glad you reached out. If you're in immediate danger, please contact <b>local emergency services</b> right now. You matter — and you don't have to carry this alone. Hearth & Heal cares about you; our ${olafLink("services.html", "Recovery Room")} and ${olafLink("contact.html", "Contact")} team can help you find human support too. 💙`;
+  }
+  if (/\b(sad|hurt|pain|lonely|depressed|cry|hopeless|anxious|anxiety)\b/.test(norm)) {
+    return `I'm sorry you're going through a hard time. ❄️ You're worth showing up for. Hearth & Heal offers judgement-free spaces — especially our ${olafLink("services.html", "Recovery Room")} and spiritual care — and you can always reach us at ${olafLink("contact.html", "Contact")} or <b>hello@hearthandheal.org</b>. 💚`;
+  }
+  return null;
+}
+
+function olafSmallTalk(norm) {
+  if (/^(hi|hello|hey|jambo|hiya|yo|good morning|good afternoon|good evening)[\s!.]*$/i.test(norm.trim())) {
+    return OLAF_GREETINGS[Math.floor(Math.random() * OLAF_GREETINGS.length)];
+  }
+  if (/\b(thank|thanks|asante)\b/.test(norm)) {
+    return "You're so welcome! Warm hug from me to you! 🤗";
+  }
+  if (/\b(bye|goodbye|see you|later)\b/.test(norm)) {
+    return "Bye for now! Stay warm — and remember, Hearth & Heal is cheering for you! ⛄";
+  }
+  if (/\b(hug|warm hug)\b/.test(norm)) {
+    return `I LOVE warm hugs! 🤗 Consider yourself officially hugged. If you need human support too, we're here — ${olafLink("contact.html", "contact us")} anytime. 💚`;
+  }
+  return null;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.getElementById("olaf-container")) return;
+
+  document.body.insertAdjacentHTML("beforeend", chatbotHTML);
+  document.head.insertAdjacentHTML("beforeend", chatbotStyles);
+
+  const trigger = document.getElementById("olaf-trigger");
+  const widget = document.getElementById("olaf-widget");
+  const closeBtn = document.getElementById("close-chat");
+  const chatLog = document.getElementById("chat-log");
+  const chatInput = document.getElementById("chat-input");
+  const sendBtn = document.getElementById("send-btn");
+
   if (window.feather) feather.replace();
 
-  const trigger = document.getElementById('olaf-trigger');
-  const widget = document.getElementById('olaf-widget');
-  const closeBtn = document.getElementById('close-chat');
-  const chatLog = document.getElementById('chat-log');
-  const chatInput = document.getElementById('chat-input');
-  const sendBtn = document.getElementById('send-btn');
-
-  // 2. Logic
   trigger.onclick = () => {
-    widget.classList.add('active');
-    trigger.style.display = 'none';
+    widget.classList.add("active");
+    trigger.style.display = "none";
+    if (window.feather) feather.replace();
 
-    // Introductory message
     if (chatLog.children.length === 0) {
       setTimeout(() => {
-        say(olafBrain.greetings[Math.floor(Math.random() * olafBrain.greetings.length)], 'ai');
+        say(OLAF_GREETINGS[Math.floor(Math.random() * OLAF_GREETINGS.length)], "ai");
         setTimeout(() => {
-          say("I'm here to help you learn about Hearth & Heal! Ask me about our <b>mission</b>, <b>services</b>, <b>shop</b>, or how to <b>donate</b>. Or just ask for a <b>hug</b>! 🤗", 'ai');
-        }, 1000);
-      }, 500);
+          say(
+            `Ask about ${olafLink("mission.html", "mission")}, ${olafLink("services.html", "services")}, ${olafLink("shop.html", "shop")}, ${olafLink("donate.html", "donate")}, or ${olafLink("contact.html", "contact")}. ⛄`,
+            "ai"
+          );
+        }, 650);
+      }, 300);
     }
+    chatInput.focus();
   };
 
   closeBtn.onclick = () => {
-    widget.classList.remove('active');
-    trigger.style.display = 'flex';
+    widget.classList.remove("active");
+    trigger.style.display = "flex";
   };
 
   function say(text, sender) {
-    const msg = document.createElement('div');
+    const msg = document.createElement("div");
     msg.className = `chat-msg msg-${sender}`;
     msg.innerHTML = text;
     chatLog.appendChild(msg);
@@ -347,10 +568,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showTyping() {
-    const typing = document.createElement('div');
-    typing.className = 'chat-msg msg-ai typing-indicator';
-    typing.id = 'olaf-typing';
-    typing.innerHTML = '<span>.</span><span>.</span><span>.</span>';
+    const typing = document.createElement("div");
+    typing.className = "chat-msg msg-ai typing-indicator";
+    typing.innerHTML = "<span></span><span></span><span></span>";
     chatLog.appendChild(typing);
     chatLog.scrollTop = chatLog.scrollHeight;
     return typing;
@@ -360,77 +580,57 @@ document.addEventListener('DOMContentLoaded', () => {
     const text = chatInput.value.trim();
     if (!text) return;
 
-    say(text, 'user');
-    chatInput.value = '';
+    const norm = normalizeOlafQuery(text);
+    const crisis = olafEmotional(norm);
+    if (crisis) {
+      say(text, "user");
+      chatInput.value = "";
+      say(crisis, "ai");
+      return;
+    }
+
+    say(text, "user");
+    chatInput.value = "";
 
     const typingIndicator = showTyping();
+    const delay = 400 + Math.min(600, text.length * 10);
 
     setTimeout(() => {
       typingIndicator.remove();
-      const response = getOlafThinking(text);
-      say(response, 'ai');
-    }, 1000);
+      say(composeOlafReply(text), "ai");
+      if (window.feather) feather.replace();
+    }, delay);
   }
 
   sendBtn.onclick = processInput;
-  chatInput.onkeypress = (e) => { if (e.key === 'Enter') processInput(); };
+  chatInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") processInput();
+  });
 
-  function getOlafThinking(input) {
-    const q = input.toLowerCase();
-
-    // Greetings
-    if (q.match(/\b(hi|hello|hey|jambo)\b/)) return "Hi there! I'm Olaf! ☃️ Did you bring a warm hug?";
-
-    // Mission & Vision
-    if (q.includes('mission')) return `My mission is your healing! 💚 "${olafBrain.context.mission}"`;
-    if (q.includes('vision')) return `We're healing the world, one hug at a time! 🌍 "${olafBrain.context.vision}"`;
-    if (q.includes('quote') || q.includes('flawless')) return `I love this reminder: <i>${olafBrain.context.quote}</i> ✨`;
-    if (q.includes('value') || q.includes('stand for')) return `We stand for: ${olafBrain.context.values.join(', ')}. No judgement here! 🤝`;
-
-    // Services
-    if (q.includes('service') || q.includes('program') || q.includes('what do you do')) {
-      return "We offer so many ways to heal! Spiritual Care, Creative Healing (my favorite!), a Recovery Room, and Resource Navigation! Check the <a href='services.html' style='color:#00C853; font-weight:bold;'>Services</a> page for the full list! ✨";
-    }
-    if (q.includes('spiritual')) return olafBrain.context.services["spiritual care"];
-    if (q.match(/\b(creative|art|dance|music|bonfire)\b/)) return olafBrain.context.services["creative healing"];
-    if (q.includes('recovery')) return olafBrain.context.services["recovery room"];
-    if (q.match(/\b(book|write|author|literature)\b/)) return olafBrain.context.services["literature"];
-    if (q.includes('resource') || q.includes('needs') || q.includes('legal')) return olafBrain.context.services["resource navigation"];
-
-    // Leadership
-    if (q.includes('founder') || q.includes('ceo') || q.includes('john') || q.includes('who runs')) return olafBrain.context.leadership;
-
-    // Shop
-    if (q.includes('shop') || q.includes('buy') || q.includes('merch') || q.includes('product')) {
-      return `We have Branded Hoodies, Sweatshirts, and more! Plus our CEO's book. 🛍️ Visit our <a href='shop.html' style='color:#00C853; font-weight:bold;'>Shop</a> to support our mission!`;
-    }
-    if (q.includes('hoodie') || q.includes('shirt') || q.includes('apparel')) return olafBrain.context.shop.apparel;
-    if (q.includes('scarf') || q.includes('cap')) return olafBrain.context.shop.accessories;
-
-    // Donations
-    if (q.includes('donate') || q.includes('give') || q.includes('money') || q.includes('support')) {
-      return `You're so kind! 💖 ${olafBrain.context.donation.methods} ${olafBrain.context.donation.impact}`;
-    }
-    if (q.includes('mpesa')) return "For M-Pesa, use <b>Paybill 123456</b> and <b>Account HEARTH</b>! Thank you! 📱";
-
-    // Contact
-    if (q.includes('contact') || q.includes('whatsapp') || q.includes('message') || q.includes('email') || q.includes('social')) {
-      return `Find us on social media: ${olafBrain.context.contact.socials} Or email <b>${olafBrain.context.contact.email}</b> or WhatsApp <b>${olafBrain.context.contact.whatsapp}</b>! 📱`;
+  function composeOlafReply(input) {
+    const norm = normalizeOlafQuery(input);
+    const tokens = olafTokens(norm);
+    if (!norm) {
+      return `Type a question — for example “What is your mission?” or “How do I donate?” — and I'll do my best! ${olafLink("mission.html", "Mission")} · ${olafLink("donate.html", "Donate")}`;
     }
 
-    // Personality / Fun
-    if (q.includes('hug')) return "I LOVE warm hugs! 🤗 *Squeeeeeeak* There you go! Can you feel the warmth?";
-    if (q.includes('summer')) return "I LOVE summer! ☀️ Bees'll buzz, kids'll blow dandelion fuzz... and I'll be doing whatever snow does in summer! 🏖️";
-    if (q.includes('reindeer') || q.includes('sven')) return "Sven is my best friend! 🦌 We go on so many adventures together!";
-    if (q.match(/\b(carrot|nose)\b/)) return "My nose is a carrot! 🥕 Is it straight? Sometimes it gets a bit wiggly!";
+    const crisis = olafEmotional(norm);
+    if (crisis) return crisis;
 
-    // Emotional Support
-    if (q.match(/\b(sad|hurt|pain|lonely|depressed|cry)\b/)) {
-      return "Oh, friend... I wish I could give you a real hug right now. ❄️ Just remember, some people are worth melting for, and YOU are worth everything. Hearth & Heal is here for you. Check out our <a href='services.html' style='color:#00C853; font-weight:bold;'>Recovery Room</a> for a safe space to talk. 💙";
+    const small = olafSmallTalk(norm);
+    if (small && norm.length < 48 && !/\b(mission|donate|service|shop|team|mpesa|email)\b/.test(norm)) {
+      return small;
     }
 
-    if (q.includes('thank')) return "You're so welcome! My heart is melting with gratitude! 🥕✨";
+    const knowledge = pickOlafReply(norm, tokens);
+    if (knowledge) return knowledge;
 
-    return "Oh flurry! ❄️ I'm not sure I understand that, but I'm still learning! Ask me about our mission, services, or if I like warm hugs!";
+    if (/\b(summer|snowman|carrot|reindeer|sven|frozen)\b/.test(norm)) {
+      if (/\b(carrot|nose)\b/.test(norm)) return "Classic Olaf: my nose is a carrot! 🥕 But my day job is answering questions about <b>Hearth & Heal</b> — try “services” or “donate.”";
+      if (/\b(summer)\b/.test(norm)) return `Summer sounds amazing! ☀️ While I daydream, you can learn how we bring warmth to real people through ${olafLink("services.html", "our services")}.`;
+      return "I'm Olaf the wellness bot for Hearth & Heal — I leave the movie plot to the movies. Ask me about healing, donations, or our team! ⛄";
+    }
+
+    return `I’m not sure I have a specific answer for that yet — but I know a lot about <b>Hearth & Heal</b>! Try asking about: ${olafLink("mission.html", "mission & values")}, ${olafLink("services.html", "services")}, ${olafLink("shop.html", "shop / book")}, ${olafLink("donate.html", "donating (M-Pesa 3028117)")}, ${olafLink("mission.html", "our team")}, or ${olafLink("contact.html", "contact")}. Or rephrase with a keyword like “CEO”, “volunteer”, or “Recovery Room”. ❄️`;
   }
 });
