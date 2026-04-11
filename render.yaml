@@ -15,6 +15,8 @@ services:
       # Email Configuration (Brevo)
       - key: BREVO_API_KEY
         sync: false
+      - key: BREVO_SMTP_LOGIN
+        value: a6febf001@smtp-brevo.com
       - key: EMAIL_FROM
         value: hearthandhealorg@gmail.com
       # Security
