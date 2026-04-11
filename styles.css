@@ -2454,4 +2454,5 @@ input:checked+.slider:before {
   color: var(--color-primary);
   border-color: rgba(0, 230, 118, 0.2);
   border-bottom: 1px solid rgba(0, 230, 118, 0.2);
-}
+} 
+ 
