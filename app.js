@@ -699,16 +699,22 @@ app.post("/login", authLimiter, async (req, res) => {
             return res.status(400).json({ error: "Email and password required" });
         }
 
+        logger.info("LOGIN_ATTEMPT", { email });
+
         const users = await db.query(
             `SELECT * FROM users WHERE LOWER(identifier) = ? AND verified = TRUE`,
             [email]
         );
         const user = users[0];
 
+        logger.info("LOGIN_USER_FOUND", { email, found: !!user, hasPassword: user?.password_hash ? true : false });
+
         const validPass = user && user.password_hash ? await bcrypt.compare(password, user.password_hash) : false;
 
+        logger.info("LOGIN_PASSWORD_CHECK", { email, validPass });
+
         if (!user || !validPass) {
-            return res.status(400).json({ error: "Invalid credentials" });
+            return res.status(400).json({ error: "Invalid credentials", debug: { userFound: !!user, passValid: validPass } });
         }
 
         // Direct login success - Issue token immediately
