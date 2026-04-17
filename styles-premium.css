@@ -390,6 +390,108 @@ hr,
   z-index: 2;
 }
 
+/* Shop Product Images - Ensure proper fit */
+.product-img {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 10px;
+  transition: transform 0.5s ease;
+}
+
+.product-card:hover .product-img img {
+  transform: scale(1.05);
+}
+
+.product-img .product-actions {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.product-card:hover .product-actions {
+  opacity: 1;
+  bottom: 20px;
+}
+
+.product-actions button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 230, 118, 0.9);
+  color: #0d0d0d;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.product-actions button:hover {
+  background: #00E676;
+  transform: scale(1.1);
+}
+
+/* Product Card Enhancements */
+.product-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.product-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(0, 230, 118, 0.3);
+  box-shadow: 0 35px 60px -15px rgba(0, 0, 0, 0.6), 
+              0 0 30px rgba(0, 230, 118, 0.1);
+}
+
+.product-content {
+  padding: 25px;
+}
+
+.product-title {
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.product-type {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.product-price {
+  color: #00E676;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .glass-card,
