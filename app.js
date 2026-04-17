@@ -16,7 +16,6 @@ const winston = require("winston");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
-const nodemailer = require("nodemailer");
 const db = require("./db");
 
 const path = require("path");
@@ -86,10 +85,10 @@ app.get("/test-email", async (req, res) => {
             "This is a test email to verify Brevo configuration.",
             "<strong>This is a test email</strong> to verify Brevo configuration."
         );
-        res.json({ success: true, message: "Email sent successfully via Brevo SMTP", from: ENV.EMAIL_FROM, smtpLogin: ENV.BREVO_SMTP_LOGIN });
+        res.json({ success: true, message: "Email sent successfully via Brevo API", from: ENV.EMAIL_FROM });
     } catch (err) {
         res.status(500).json({
-            error: "Brevo SMTP Error",
+            error: "Brevo API Error",
             message: err.message
         });
     }
@@ -274,55 +273,41 @@ function getEmailTemplate(title, bodyContent) {
     `;
 }
 
-// Brevo SMTP transporter (created once, reused)
-let smtpTransporter = null;
-
-function getSmtpTransporter() {
-    if (smtpTransporter) return smtpTransporter;
-
-    if (!ENV.BREVO_API_KEY) {
-        logger.warn("BREVO_API_KEY_MISSING: SMTP not configured.");
-        return null;
-    }
-
-    smtpTransporter = nodemailer.createTransport({
-        host: "smtp-relay.brevo.com",
-        port: 587,
-        secure: false,
-        auth: {
-            user: ENV.BREVO_SMTP_LOGIN,
-            pass: ENV.BREVO_API_KEY
-        }
-    });
-
-    return smtpTransporter;
-}
-
-// Send email via Brevo SMTP
+// Send email via Brevo REST API
 async function sendEmail(to, subject, text, html = null) {
     logger.info("EMAIL_ATTEMPT", { to, subject });
 
-    const transporter = getSmtpTransporter();
-
-    if (!transporter) {
-        logger.warn("EMAIL_SIMULATION: SMTP not configured.", { to });
+    if (!ENV.BREVO_API_KEY) {
+        logger.warn("BREVO_API_KEY_MISSING: Simulation mode active.", { to });
         console.log(`\n=== [EMAIL SIMULATION] ===\nTo: ${to}\nSubject: ${subject}\nBody: ${text}\n========================\n`);
         return;
     }
 
     try {
-        const info = await transporter.sendMail({
-            from: `"Hearth & Heal Security" <${ENV.EMAIL_FROM}>`,
-            to,
-            subject,
-            text,
-            html: html || text
-        });
-        logger.info("EMAIL_SENT_SUCCESS", { to, messageId: info.messageId });
+        await axios.post(
+            "https://api.brevo.com/v3/smtp/email",
+            {
+                sender: { name: "Hearth & Heal Security", email: ENV.EMAIL_FROM },
+                to: [{ email: to }],
+                subject,
+                textContent: text,
+                htmlContent: html || text
+            },
+            {
+                headers: {
+                    "api-key": ENV.BREVO_API_KEY,
+                    "Content-Type": "application/json",
+                    Accept: "application/json"
+                }
+            }
+        );
+        logger.info("EMAIL_SENT_SUCCESS", { to });
     } catch (err) {
-        console.error("BREVO SMTP ERROR:", err.message);
-        logger.error("EMAIL_SEND_FAILURE", { error: err.message });
-        throw new Error(`Email delivery failed (Brevo SMTP): ${err.message}`);
+        const detail = err.response?.data ?? err.message;
+        console.error("BREVO ERROR:", detail);
+        logger.error("EMAIL_SEND_FAILURE", { error: detail });
+        const msg = typeof detail === "object" ? JSON.stringify(detail) : String(detail);
+        throw new Error(`Email delivery failed (Brevo): ${msg}`);
     }
 }
 

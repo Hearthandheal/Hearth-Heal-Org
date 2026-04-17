@@ -456,7 +456,7 @@ footer.footer-modern {
 }
 
 .logo img {
-  height: 60px;
+  height: 80px;
   width: auto;
   object-fit: contain;
   filter: brightness(1.05) contrast(1.02);
