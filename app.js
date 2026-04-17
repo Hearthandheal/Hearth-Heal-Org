@@ -79,11 +79,30 @@ app.get("/test-email", async (req, res) => {
             });
         }
 
+        const testHtml = getEmailTemplate("Test Email - System Working! ✅", `
+            <h3>This is a test of our new premium email system</h3>
+            <p>Congratulations! Your Hearth & Heal email notifications are now configured with our premium, professional email templates.</p>
+            
+            <div class="highlight-box">
+                <p>✨ What you can expect:</p>
+                <ul style="margin: 10px 0; padding-left: 20px; color: #166534;">
+                    <li>Beautiful, modern email designs</li>
+                    <li>Clear, easy-to-read verification codes</li>
+                    <li>Secure, time-sensitive links</li>
+                    <li>Mobile-friendly responsive layouts</li>
+                </ul>
+            </div>
+            
+            <p style="text-align: center; color: #64748b; margin-top: 30px;">
+                <em>Your safe haven for healing & growth</em>
+            </p>
+        `);
+        
         await sendEmail(
             email,
-            "Test Email from Hearth & Heal",
-            "This is a test email to verify Brevo configuration.",
-            "<strong>This is a test email</strong> to verify Brevo configuration."
+            "✅ Test Email - Hearth & Heal System Working",
+            "This is a test email to verify Brevo configuration is working correctly.",
+            testHtml
         );
         res.json({ success: true, message: "Email sent successfully via Brevo API", from: ENV.EMAIL_FROM });
     } catch (err) {
@@ -205,67 +224,305 @@ async function checkMpesaStatus(invoice) {
     }
 }
 
-// Email Template Helper - Professional & Trusted Design
+// Email Template Helper - Premium Professional Design
 function getEmailTemplate(title, bodyContent) {
     return `
     <!DOCTYPE html>
     <html>
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <style>
-            body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; color: #333; }
-            .email-container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
             
-            /* Trust Header */
-            .header { background: #0a0a0a; padding: 30px 20px; text-align: center; border-bottom: 4px solid #00E676; }
-            .brand-name { color: #ffffff; font-size: 24px; font-weight: 700; margin: 0; letter-spacing: 1px; display: inline-block; vertical-align: middle; }
-            
-            /* Verified Badge */
-            .verified-badge { 
-                display: inline-block; vertical-align: middle; margin-left: 10px; 
-                background: rgba(0, 230, 118, 0.15); border: 1px solid #00E676; 
-                color: #00E676; padding: 4px 10px; border-radius: 50px; 
-                font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+            body { 
+                margin: 0; padding: 0; 
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); 
+                color: #333;
+                line-height: 1.6;
             }
-            .verified-icon { width: 14px; height: 14px; vertical-align: text-bottom; fill: currentColor; margin-right: 4px; }
-
-            .content { padding: 40px 30px; background: #fff; }
-            .content h2 { margin-top: 0; color: #111; font-size: 22px; }
-            .content p { font-size: 16px; line-height: 1.6; color: #444; margin-bottom: 20px; }
             
-            /* OTP Box */
+            .email-wrapper { 
+                max-width: 600px; 
+                margin: 40px auto; 
+                background: #ffffff; 
+                border-radius: 20px; 
+                overflow: hidden; 
+                box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.1);
+            }
+            
+            /* Premium Header with Logo */
+            .header { 
+                background: linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 50%, #16213e 100%); 
+                padding: 40px 30px; 
+                text-align: center; 
+                position: relative;
+            }
+            
+            .header::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: url('https://hearth-heal-org.onrender.com/assets/logo.png') center/80px auto no-repeat;
+                opacity: 0.1;
+            }
+            
+            .logo-text { 
+                color: #ffffff; 
+                font-size: 28px; 
+                font-weight: 700; 
+                margin: 0; 
+                letter-spacing: -0.5px;
+                position: relative;
+                z-index: 1;
+            }
+            
+            .logo-text span { color: #00E676; }
+            
+            .tagline {
+                color: rgba(255,255,255,0.7);
+                font-size: 13px;
+                margin-top: 8px;
+                font-weight: 400;
+                letter-spacing: 0.5px;
+            }
+            
+            /* Security Badge */
+            .security-badge { 
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                margin-top: 15px;
+                background: rgba(0, 230, 118, 0.15); 
+                border: 1px solid rgba(0, 230, 118, 0.3); 
+                color: #00E676; 
+                padding: 6px 14px; 
+                border-radius: 50px; 
+                font-size: 11px; 
+                font-weight: 600; 
+                text-transform: uppercase; 
+                letter-spacing: 0.8px;
+                backdrop-filter: blur(10px);
+            }
+            
+            .security-badge svg { width: 14px; height: 14px; fill: currentColor; }
+
+            /* Content Area */
+            .content { 
+                padding: 50px 40px; 
+                background: #ffffff;
+            }
+            
+            .content h2 { 
+                margin: 0 0 20px 0; 
+                color: #1a1a2e; 
+                font-size: 26px; 
+                font-weight: 700;
+                line-height: 1.3;
+            }
+            
+            .content h3 {
+                color: #4a4a6a;
+                font-size: 16px;
+                font-weight: 500;
+                margin-bottom: 25px;
+            }
+            
+            .content p { 
+                font-size: 15px; 
+                line-height: 1.8; 
+                color: #555; 
+                margin-bottom: 20px;
+            }
+            
+            .highlight-box {
+                background: linear-gradient(135deg, #f0fdf4 0%, #e6f7ed 100%);
+                border-left: 4px solid #00E676;
+                padding: 20px 25px;
+                margin: 25px 0;
+                border-radius: 0 12px 12px 0;
+            }
+            
+            .highlight-box p { margin: 0; color: #166534; font-weight: 500; }
+            
+            /* Premium OTP Box */
+            .otp-container {
+                text-align: center;
+                margin: 35px 0;
+                padding: 30px;
+                background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+                border-radius: 16px;
+                border: 2px dashed #cbd5e1;
+            }
+            
+            .otp-label {
+                font-size: 12px;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                font-weight: 600;
+                margin-bottom: 15px;
+            }
+            
             .otp-code { 
-                background: #f0fdf4; border: 1px dashed #00E676; 
-                color: #000; font-family: 'Courier New', monospace; font-size: 36px; font-weight: 700; letter-spacing: 8px;
-                padding: 20px; text-align: center; border-radius: 8px; margin: 25px 0;
+                background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+                border: 2px solid #00E676;
+                color: #1a1a2e; 
+                font-family: 'Courier New', 'SF Mono', monospace; 
+                font-size: 42px; 
+                font-weight: 700; 
+                letter-spacing: 12px;
+                padding: 25px 30px; 
+                text-align: center; 
+                border-radius: 12px; 
+                box-shadow: 0 4px 6px -1px rgba(0, 230, 118, 0.2), 0 2px 4px -1px rgba(0, 230, 118, 0.1);
+                display: inline-block;
             }
-
-            .footer { background: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #eee; font-size: 12px; color: #888; }
-            .footer p { margin: 5px 0; }
-            .trust-msg { display: flex; align-items: center; justify-content: center; margin-bottom: 10px; color: #666; font-weight: 500; }
-            .lock-icon { width: 12px; height: 12px; margin-right: 5px; fill: #666; }
+            
+            .otp-expire {
+                margin-top: 15px;
+                font-size: 13px;
+                color: #64748b;
+            }
+            
+            .otp-expire strong { color: #dc2626; }
+            
+            /* Premium Button */
+            .button-container {
+                text-align: center;
+                margin: 35px 0;
+            }
+            
+            .btn-primary {
+                display: inline-block;
+                background: linear-gradient(135deg, #00E676 0%, #00c853 100%);
+                color: #0d0d0d; 
+                padding: 16px 40px; 
+                text-decoration: none; 
+                border-radius: 50px; 
+                font-weight: 700; 
+                font-size: 15px;
+                letter-spacing: 0.5px;
+                box-shadow: 0 10px 25px -5px rgba(0, 230, 118, 0.4);
+                transition: all 0.3s ease;
+            }
+            
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 15px 30px -5px rgba(0, 230, 118, 0.5);
+            }
+            
+            /* Info Box */
+            .info-box {
+                background: #f8fafc;
+                border-radius: 12px;
+                padding: 20px 25px;
+                margin: 25px 0;
+            }
+            
+            .info-box-title {
+                font-size: 13px;
+                font-weight: 600;
+                color: #475569;
+                margin-bottom: 10px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            
+            .info-box-title svg {
+                width: 16px;
+                height: 16px;
+                fill: #00E676;
+            }
+            
+            /* Footer */
+            .footer { 
+                background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); 
+                padding: 35px 40px; 
+                text-align: center;
+                border-top: 1px solid #e2e8f0;
+            }
+            
+            .security-footer {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                color: #475569;
+                font-size: 13px;
+                font-weight: 500;
+                margin-bottom: 20px;
+                padding: 10px 20px;
+                background: #ffffff;
+                border-radius: 50px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+            
+            .security-footer svg { width: 16px; height: 16px; fill: #00E676; }
+            
+            .footer p { 
+                margin: 8px 0; 
+                font-size: 12px; 
+                color: #64748b;
+                line-height: 1.6;
+            }
+            
+            .footer-brand {
+                font-weight: 600;
+                color: #1a1a2e;
+            }
+            
+            .footer-links {
+                margin-top: 20px;
+                padding-top: 20px;
+                border-top: 1px solid #e2e8f0;
+            }
+            
+            .footer-links a {
+                color: #00c853;
+                text-decoration: none;
+                font-weight: 500;
+                font-size: 12px;
+            }
+            
+            /* Responsive */
+            @media only screen and (max-width: 600px) {
+                .email-wrapper { margin: 20px; border-radius: 16px; }
+                .content { padding: 35px 25px; }
+                .content h2 { font-size: 22px; }
+                .otp-code { font-size: 32px; letter-spacing: 8px; padding: 20px 25px; }
+                .header { padding: 30px 20px; }
+                .logo-text { font-size: 24px; }
+            }
         </style>
     </head>
     <body>
-        <div class="email-container">
+        <div class="email-wrapper">
             <div class="header">
-                <div class="brand-name">Hearth & Heal</div>
-                <div class="verified-badge">
-                    <svg class="verified-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-                    Verified
+                <div class="logo-text">Hearth <span>&</span> Heal</div>
+                <div class="tagline">A Safe Haven for Healing & Growth</div>
+                <div class="security-badge">
+                    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Secure & Verified
                 </div>
             </div>
+            
             <div class="content">
                 <h2>${title}</h2>
                 ${bodyContent}
             </div>
+            
             <div class="footer">
-                <div class="trust-msg">
-                    <svg class="lock-icon" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-9-2c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
-                    Secured by Hearth & Heal Identity
+                <div class="security-footer">
+                    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Protected by Hearth & Heal Security
                 </div>
-                <p>&copy; ${new Date().getFullYear()} Hearth and Heal Organization. All rights reserved.</p>
-                <p>This is an automated security notification. If you did not verify this action, please contact support immediately.</p>
+                <p>&copy; ${new Date().getFullYear()} <span class="footer-brand">Hearth and Heal Organization</span>. All rights reserved.</p>
+                <p>This is an automated security notification.<br>If you did not request this action, please contact support immediately.</p>
             </div>
         </div>
     </body>
@@ -367,13 +624,23 @@ app.post("/request-verification", authLimiter, async (req, res) => {
 
         const verifyLink = `${ENV.BASE_URL}/verify-email.html?ref=${encodeURIComponent(ref)}&token=${encodeURIComponent(otp)}`;
 
-        const emailHtml = getEmailTemplate("Verify Your Email", `
-            <p>Welcome to Hearth & Heal! Use this code on the signup page, or tap the button below to verify in one step.</p>
-            <div class="otp-code">${otp}</div>
-            <div style="text-align: center; margin: 20px 0;">
-                <a href="${verifyLink}" style="background-color: #00E676; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verify Email</a>
+        const emailHtml = getEmailTemplate("Welcome to Hearth & Heal! 🌿", `
+            <h3>Verify your account to get started</h3>
+            <p>Thank you for joining Hearth & Heal - your safe haven for healing and growth. To complete your registration, please use the verification code below or click the button to verify instantly.</p>
+            
+            <div class="otp-container">
+                <div class="otp-label">Your Verification Code</div>
+                <div class="otp-code">${otp}</div>
+                <div class="otp-expire">⏱ Expires in <strong>1 hour</strong></div>
             </div>
-            <p style="text-align: center; font-size: 12px; color: #666;">Code and link expire in 1 hour.</p>
+            
+            <div class="button-container">
+                <a href="${verifyLink}" class="btn-primary">✓ Verify My Email</a>
+            </div>
+            
+            <div class="highlight-box">
+                <p>🔐 This code and link are for your security. Never share them with anyone.</p>
+            </div>
         `);
         await sendEmail(
             email,
@@ -488,10 +755,19 @@ app.post("/login/request", async (req, res) => {
             [ref, codeHash, email, Date.now() + 10 * 60 * 1000]
         );
 
-        const emailHtml = getEmailTemplate("Login Verification", `
-            <p>You requested to log in to your account. Use the code below to sign in:</p>
-            <div class="otp-code">${code}</div>
-            <p>This code expires in 10 minutes. Only share this code if you requested it.</p>
+        const emailHtml = getEmailTemplate("Secure Login Request 🔐", `
+            <h3>We received a login request for your account</h3>
+            <p>If you requested to log in to Hearth & Heal, please use the secure code below. If you didn't request this, please ignore this email.</p>
+            
+            <div class="otp-container">
+                <div class="otp-label">Your Login Code</div>
+                <div class="otp-code">${code}</div>
+                <div class="otp-expire">⏱ Expires in <strong>10 minutes</strong></div>
+            </div>
+            
+            <div class="highlight-box">
+                <p>⚠️ Never share this code with anyone. Our team will never ask for it.</p>
+            </div>
         `);
         await sendEmail(email, "Hearth & Heal Login Code", `Your login code is ${code}`, emailHtml);
         res.json({
@@ -597,12 +873,22 @@ app.post("/api/auth/forgot-password", resetLimiter, async (req, res) => {
         // Link format: /forgot-password.html?token=TOKEN
         const resetLink = `${ENV.BASE_URL}/forgot-password.html?token=${token}`;
 
-        const emailHtml = getEmailTemplate("Reset Your Password", `
-            <p>We received a request to reset your password. Click the link below to set a new password:</p>
-            <div style="text-align: center; margin: 20px 0;">
-                <a href="${resetLink}" style="background-color: #00E676; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Password</a>
+        const emailHtml = getEmailTemplate("Password Reset Requested 🔑", `
+            <h3>Did you forget your password?</h3>
+            <p>We received a request to reset your Hearth & Heal account password. Don't worry - it happens to the best of us! Click the button below to create a new secure password.</p>
+            
+            <div class="button-container">
+                <a href="${resetLink}" class="btn-primary">🔑 Reset My Password</a>
             </div>
-            <p style="text-align: center; font-size: 12px; color: #666;">If you didn't request this, you can safely ignore this email.</p>
+            
+            <div class="info-box">
+                <div class="info-box-title">⏱ Time-sensitive</div>
+                <p style="margin: 0; color: #64748b; font-size: 13px;">This link expires in <strong>2 minutes</strong> for your security.</p>
+            </div>
+            
+            <div class="highlight-box">
+                <p>🛡️ Didn't request this? Your account is safe - simply ignore this email and the link will expire automatically.</p>
+            </div>
         `);
 
         await sendEmail(email, "Password Reset", `Click here: ${resetLink}`, emailHtml);
