@@ -472,6 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderCartPage() {
         const cartBody = document.getElementById('cart-body');
+        const cartSubtotal = document.getElementById('cart-subtotal');
         const cartTotal = document.getElementById('cart-total');
         const cart = getCart();
 
@@ -479,8 +480,21 @@ document.addEventListener('DOMContentLoaded', () => {
         let total = 0;
 
         if (cart.length === 0) {
-            cartBody.innerHTML = '<tr><td colspan="5">Your cart is empty.</td></tr>';
-            cartTotal.innerText = 'Grand Total: KSH 0';
+            cartBody.innerHTML = `
+                <div class="empty-cart">
+                    <div class="empty-cart-icon">
+                        <i data-feather="shopping-cart" style="width: 60px; height: 60px;"></i>
+                    </div>
+                    <h3>Your cart is empty</h3>
+                    <p>Looks like you haven't added any items yet.</p>
+                    <a href="shop.html" class="btn-continue-shopping">
+                        <i data-feather="shopping-bag"></i> Start Shopping
+                    </a>
+                </div>
+            `;
+            if (cartSubtotal) cartSubtotal.innerText = 'KSH 0';
+            if (cartTotal) cartTotal.innerText = 'KSH 0';
+            feather.replace();
             return;
         }
 
@@ -493,52 +507,62 @@ document.addEventListener('DOMContentLoaded', () => {
             const variationLabel = item.category === 'book' ? 'Format' : 'Size';
             const variationValue = item.size || 'Standard';
 
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td style="display: flex; gap: 1rem; align-items: start;">
-                    ${item.imgSrc ? `<img src="${item.imgSrc}" alt="${item.title}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">` : ''}
-                    <div>
-                        <div style="font-weight:700; font-size: 1.1rem; margin-bottom: 0.25rem;">${item.title}</div>
-                        <div style="font-size:0.9rem; color:#666; margin-bottom: 0.5rem; line-height: 1.4; max-width: 300px;">
-                            ${item.desc || 'No description available'}
-                        </div>
-                        <div style="font-size:0.8rem; color:#888; background: rgba(0,0,0,0.05); display: inline-block; padding: 2px 8px; border-radius: 4px;">
-                            <span style="font-weight: 600; color: #333;">${variationLabel}:</span> ${variationValue}
-                            ${item.color ? `<span style="margin-left:8px; border-left:1px solid #ccc; padding-left:8px;"><span style="font-weight: 600; color: #333;">Color:</span> ${item.color}</span>` : ''}
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'cart-item';
+            itemDiv.innerHTML = `
+                <div class="product-info">
+                    ${item.imgSrc ? `<img src="${item.imgSrc}" alt="${item.title}" class="product-image" onerror="this.style.display='none'">` : '<div class="product-image" style="display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.3);"><i data-feather="image"></i></div>'}
+                    <div class="product-details">
+                        <h4>${item.title}</h4>
+                        <div class="product-meta">${item.desc ? item.desc.substring(0, 60) + '...' : 'Hearth & Heal Product'}</div>
+                        <div class="product-variant">
+                            <span>${variationLabel}: ${variationValue}</span>
+                            ${item.color ? `<span>Color: ${item.color}</span>` : ''}
                         </div>
                     </div>
-                </td>
-                <td style="vertical-align: top; padding-top: 1rem;">${item.price}</td>
-                <td style="vertical-align: top; padding-top: 1rem;">
-                    <input type="number" value="${qty}" min="1" max="20" data-index="${index}" class="cart-qty-input" style="width: 60px; padding: 5px;">
-                </td>
-                <td style="vertical-align: top; padding-top: 1rem; font-weight: 600;">KSH ${lineTotal.toLocaleString()}</td>
-                <td style="vertical-align: top; padding-top: 1rem;"><button class="btn-remove" data-index="${index}" style="color: red; background: none; border: none; cursor: pointer; text-decoration: underline;">Remove</button></td>
+                </div>
+                <div class="price">${item.price}</div>
+                <div class="quantity-control">
+                    <button class="quantity-btn" data-index="${index}" data-action="decrease">−</button>
+                    <input type="text" value="${qty}" class="quantity-input" readonly>
+                    <button class="quantity-btn" data-index="${index}" data-action="increase">+</button>
+                </div>
+                <div class="item-total">KSH ${lineTotal.toLocaleString()}</div>
+                <button class="btn-remove" data-index="${index}" title="Remove item">
+                    <i data-feather="trash-2" style="width: 20px; height: 20px;"></i>
+                </button>
             `;
-            cartBody.appendChild(row);
+            cartBody.appendChild(itemDiv);
         });
 
-        cartTotal.innerText = 'Grand Total: KSH ' + total.toLocaleString();
+        if (cartSubtotal) cartSubtotal.innerText = 'KSH ' + total.toLocaleString();
+        if (cartTotal) cartTotal.innerText = 'KSH ' + total.toLocaleString();
 
         // Event Listeners for Cart Actions
         document.querySelectorAll('.btn-remove').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const index = e.target.dataset.index;
+                const index = e.currentTarget.dataset.index;
                 cart.splice(index, 1);
                 saveCart(cart);
                 renderCartPage();
             });
         });
 
-        document.querySelectorAll('.cart-qty-input').forEach(input => {
-            input.addEventListener('change', (e) => {
-                const index = e.target.dataset.index;
-                const newQty = parseInt(e.target.value);
-                if (newQty > 0) {
-                    cart[index].qty = newQty;
-                    saveCart(cart);
-                    renderCartPage();
+        // Quantity controls
+        document.querySelectorAll('.quantity-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const index = e.currentTarget.dataset.index;
+                const action = e.currentTarget.dataset.action;
+                const currentQty = parseInt(cart[index].qty);
+                
+                if (action === 'increase' && currentQty < 20) {
+                    cart[index].qty = currentQty + 1;
+                } else if (action === 'decrease' && currentQty > 1) {
+                    cart[index].qty = currentQty - 1;
                 }
+                
+                saveCart(cart);
+                renderCartPage();
             });
         });
 
@@ -557,7 +581,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let msg = `🛍️ *H&H CART ORDER - WHATSAPP*\n`;
                 msg += `------------------------------\n`;
                 cartItems.forEach(item => {
-                    const priceVal = parseFloat(item.price.replace('KSH ', ''));
+                    const priceVal = parseFloat(item.price.replace(/[^0-9.]/g, ''));
                     const lineTotal = priceVal * parseInt(item.qty);
                     total += lineTotal;
                     msg += `• ${item.qty}x ${item.title} [${item.color ? item.color + ', ' : ''}${item.size || 'Std'}] @ ${item.price}\n`;
@@ -571,6 +595,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.open(`https://wa.me/${adminPhone}?text=${encodeURIComponent(msg)}`, '_blank');
             });
         }
+
+        feather.replace();
     }
 
 });
