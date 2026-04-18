@@ -2,9 +2,9 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import axios from 'axios';
 import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 
 dotenv.config();
 
@@ -23,26 +23,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hearth_he
 // Routes
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
-
-// M-Pesa STK Push
-app.post('/api/payments/mpesa', async (req, res) => {
-  try {
-    const { phone, amount, orderId } = req.body;
-    
-    // TODO: Implement M-Pesa STK Push
-    // This is a placeholder - you'll need to integrate with Safaricom API
-    
-    res.json({ 
-      message: 'M-Pesa STK Push initiated',
-      phone,
-      amount,
-      orderId,
-      status: 'pending'
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+app.use('/api/payments', paymentRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

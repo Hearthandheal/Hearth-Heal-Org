@@ -1,0 +1,78 @@
+import express from "express";
+import axios from "axios";
+
+const router = express.Router();
+
+// Generate timestamp in YYYYMMDDHHMMSS format
+const getTimestamp = () => {
+  const now = new Date();
+  return now.getFullYear() +
+    String(now.getMonth() + 1).padStart(2, '0') +
+    String(now.getDate()).padStart(2, '0') +
+    String(now.getHours()).padStart(2, '0') +
+    String(now.getMinutes()).padStart(2, '0') +
+    String(now.getSeconds()).padStart(2, '0');
+};
+
+// Generate M-Pesa password
+const getPassword = (shortcode, passkey, timestamp) => {
+  const str = shortcode + passkey + timestamp;
+  return Buffer.from(str).toString('base64');
+};
+
+router.post("/stk", async (req, res) => {
+  const { phone, amount } = req.body;
+
+  try {
+    // 1. Get Access Token
+    const auth = Buffer.from(
+      process.env.CONSUMER_KEY + ":" + process.env.CONSUMER_SECRET
+    ).toString("base64");
+
+    const tokenRes = await axios.get(
+      "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
+      {
+        headers: { Authorization: `Basic ${auth}` },
+      }
+    );
+
+    const token = tokenRes.data.access_token;
+    const timestamp = getTimestamp();
+    const password = getPassword(process.env.SHORTCODE, process.env.PASSKEY, timestamp);
+
+    // 2. STK Push
+    const stkRes = await axios.post(
+      "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+      {
+        BusinessShortCode: process.env.SHORTCODE,
+        Password: password,
+        Timestamp: timestamp,
+        TransactionType: "CustomerPayBillOnline",
+        Amount: amount,
+        PartyA: phone,
+        PartyB: process.env.SHORTCODE,
+        PhoneNumber: phone,
+        CallBackURL: process.env.CALLBACK_URL,
+        AccountReference: "Hearth&Heal",
+        TransactionDesc: "Payment",
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    res.json(stkRes.data);
+  } catch (err) {
+    console.error("M-Pesa Error:", err.response?.data || err.message);
+    res.status(500).json({ error: err.response?.data || err.message });
+  }
+});
+
+// M-Pesa Callback
+router.post("/callback", async (req, res) => {
+  console.log("M-Pesa Callback:", req.body);
+  // Update order payment status here
+  res.json({ ResultCode: 0, ResultDesc: "Success" });
+});
+
+export default router;
