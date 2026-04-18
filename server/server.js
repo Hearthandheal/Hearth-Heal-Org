@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/hearth_heal
   .catch(err => console.error('❌ MongoDB Error:', err));
 
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
