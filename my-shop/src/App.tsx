@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { motion } from "framer-motion";
 
 const API_URL = "http://localhost:5000/api";
 
@@ -80,8 +81,9 @@ export default function App() {
       {/* PRODUCTS */}
       <div className="grid md:grid-cols-3 gap-10 px-10 pb-20">
         {products.map((p) => (
-          <div
+          <motion.div
             key={p._id}
+            whileHover={{ scale: 1.03 }}
             className="group bg-zinc-900/40 backdrop-blur-lg p-6 rounded-3xl transition hover:bg-zinc-900/70"
           >
             <img
@@ -101,7 +103,7 @@ export default function App() {
             >
               Add to Cart
             </button>
-          </div>
+          </motion.div>
         ))}
       </div>
 
