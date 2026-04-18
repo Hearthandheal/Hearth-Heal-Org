@@ -70,8 +70,33 @@ router.post("/stk", async (req, res) => {
 
 // M-Pesa Callback
 router.post("/callback", async (req, res) => {
-  console.log("M-Pesa Callback:", req.body);
-  // Update order payment status here
+  const data = req.body;
+
+  // Extract payment result
+  const resultCode = data.Body.stkCallback.ResultCode;
+  const checkoutRequestID = data.Body.stkCallback.CheckoutRequestID;
+
+  if (resultCode === 0) {
+    // SUCCESS
+    console.log("Payment successful:", checkoutRequestID);
+
+    // Get transaction details
+    const callbackMetadata = data.Body.stkCallback.CallbackMetadata.Item;
+    const amount = callbackMetadata.find(item => item.Name === "Amount")?.Value;
+    const mpesaReceipt = callbackMetadata.find(item => item.Name === "MpesaReceiptNumber")?.Value;
+    const phone = callbackMetadata.find(item => item.Name === "PhoneNumber")?.Value;
+
+    console.log({ amount, mpesaReceipt, phone });
+
+    // TODO: Update order with payment details
+    // await Order.findOneAndUpdate(
+    //   { mpesaCheckoutId: checkoutRequestID },
+    //   { paymentStatus: "paid", mpesaReceipt }
+    // );
+  } else {
+    console.log("Payment failed:", resultCode, data.Body.stkCallback.ResultDesc);
+  }
+
   res.json({ ResultCode: 0, ResultDesc: "Success" });
 });
 
