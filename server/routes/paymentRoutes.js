@@ -1,5 +1,6 @@
 import express from "express";
 import axios from "axios";
+import Order from "../models/Order.js";
 
 const router = express.Router();
 
@@ -88,11 +89,14 @@ router.post("/callback", async (req, res) => {
 
     console.log({ amount, mpesaReceipt, phone });
 
-    // TODO: Update order with payment details
-    // await Order.findOneAndUpdate(
-    //   { mpesaCheckoutId: checkoutRequestID },
-    //   { paymentStatus: "paid", mpesaReceipt }
-    // );
+    // Find and update order
+    const order = await Order.findOne({ phone, amount, status: "pending" });
+    if (order) {
+      order.status = "paid";
+      order.mpesaReceipt = mpesaReceipt;
+      await order.save();
+      console.log("Order updated to paid:", order._id);
+    }
   } else {
     console.log("Payment failed:", resultCode, data.Body.stkCallback.ResultDesc);
   }
