@@ -16,7 +16,7 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hearth_heal_shop')
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/hearth_heal_shop')
   .then(() => console.log('✅ MongoDB Connected'))
   .catch(err => console.error('❌ MongoDB Error:', err));
 
