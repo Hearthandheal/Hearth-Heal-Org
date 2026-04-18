@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import axios from 'axios';
+import Product from './models/Product.js';
+import Order from './models/Order.js';
 
 dotenv.config();
 
@@ -17,44 +19,6 @@ app.use(express.json());
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hearth_heal_shop')
   .then(() => console.log('✅ MongoDB Connected'))
   .catch(err => console.error('❌ MongoDB Error:', err));
-
-// Product Schema
-const productSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  price: { type: Number, required: true },
-  description: String,
-  image: String,
-  category: String,
-  stock: { type: Number, default: 10 },
-  createdAt: { type: Date, default: Date.now }
-});
-
-const Product = mongoose.model('Product', productSchema);
-
-// Order Schema
-const orderSchema = new mongoose.Schema({
-  customerName: String,
-  customerPhone: String,
-  customerEmail: String,
-  items: [{
-    productId: mongoose.Schema.Types.ObjectId,
-    name: String,
-    price: Number,
-    quantity: Number,
-    size: String,
-    color: String
-  }],
-  totalAmount: Number,
-  paymentStatus: { type: String, default: 'pending' }, // pending, paid, failed
-  mpesaReceipt: String,
-  deliveryAddress: {
-    city: String,
-    street: String
-  },
-  createdAt: { type: Date, default: Date.now }
-});
-
-const Order = mongoose.model('Order', orderSchema);
 
 // Routes
 
