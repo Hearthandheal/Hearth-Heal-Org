@@ -84,7 +84,10 @@ export default function App() {
             key={p._id}
             className="group bg-zinc-900/40 backdrop-blur-lg p-6 rounded-3xl transition hover:bg-zinc-900/70"
           >
-            <div className="h-64 bg-zinc-800 rounded-2xl mb-6" />
+            <img
+              src={p.image}
+              className="h-64 w-full object-cover rounded-2xl mb-6"
+            />
 
             <h3 className="text-lg font-medium">{p.name}</h3>
             <p className="text-zinc-400 mt-1">KES {p.price}</p>
