@@ -115,63 +115,129 @@ export default function App() {
         <motion.div 
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
         >
           <motion.div 
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="bg-zinc-900 p-8 rounded-3xl w-full max-w-md"
+            className="bg-zinc-950 border border-zinc-800 w-full max-w-4xl rounded-2xl overflow-hidden"
           >
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-semibold">Your Cart</h3>
+            {/* Header */}
+            <div className="bg-zinc-900 px-8 py-5 border-b border-zinc-800 flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-semibold text-white">Secure Checkout</h3>
+                <p className="text-zinc-500 text-sm mt-1">Complete your purchase securely</p>
+              </div>
               <button 
                 onClick={() => setShowCheckout(false)}
-                className="text-zinc-400 hover:text-white"
+                className="text-zinc-400 hover:text-white text-2xl"
               >
                 ×
               </button>
             </div>
 
             {cart.length === 0 ? (
-              <p className="text-zinc-400">Your cart is empty</p>
+              <div className="p-8">
+                <p className="text-zinc-400">Your cart is empty</p>
+              </div>
             ) : (
-              <>
-                {cart.map((item, i) => (
-                  <div key={i} className="flex justify-between items-center py-3 border-b border-zinc-800">
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-zinc-400 text-sm">KES {item.price}</p>
+              <div className="grid md:grid-cols-2">
+                {/* Left: Order Summary */}
+                <div className="p-8 border-r border-zinc-800">
+                  <h4 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-6">
+                    Order Summary
+                  </h4>
+                  
+                  <div className="space-y-4">
+                    {cart.map((item, i) => (
+                      <div key={i} className="flex justify-between items-start py-4 border-b border-zinc-800/50">
+                        <div className="flex-1">
+                          <p className="font-medium text-white">{item.name}</p>
+                          {item.description && (
+                            <p className="text-zinc-500 text-sm mt-1 line-clamp-1">{item.description}</p>
+                          )}
+                        </div>
+                        <div className="text-right ml-4">
+                          <p className="font-semibold text-white">KES {item.price}</p>
+                          <button 
+                            onClick={() => removeFromCart(i)}
+                            className="text-red-400 hover:text-red-300 text-xs mt-1"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-6 pt-6 border-t border-zinc-800">
+                    <div className="flex justify-between items-center">
+                      <span className="text-zinc-400">Subtotal</span>
+                      <span className="text-white">KES {total}</span>
                     </div>
-                    <button 
-                      onClick={() => removeFromCart(i)}
-                      className="text-red-400 hover:text-red-300"
-                    >
-                      Remove
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-zinc-400">Shipping</span>
+                      <span className="text-green-400">Free</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-4 pt-4 border-t border-zinc-800">
+                      <span className="text-lg font-semibold text-white">Total</span>
+                      <span className="text-2xl font-bold text-white">KES {total}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Payment */}
+                <div className="p-8 bg-zinc-900/50">
+                  <h4 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-6">
+                    Payment Method
+                  </h4>
+
+                  {/* Payment Options */}
+                  <div className="space-y-3 mb-8">
+                    <button className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-green-500 bg-green-500/10">
+                      <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center">
+                        <span className="text-black font-bold text-sm">M</span>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="font-semibold text-white">M-Pesa</p>
+                        <p className="text-zinc-400 text-sm">Pay via M-Pesa</p>
+                      </div>
+                      <div className="w-4 h-4 rounded-full border-2 border-green-500 bg-green-500" />
                     </button>
                   </div>
-                ))}
 
-                <div className="mt-6 pt-4 border-t border-zinc-800">
-                  <p className="text-xl font-semibold">
-                    Total: KES {total}
-                  </p>
+                  {/* Phone Input */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">
+                        M-Pesa Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="2547XX XXX XXX"
+                        className="w-full p-4 bg-zinc-800 border border-zinc-700 rounded-xl text-white placeholder-zinc-500 focus:border-green-500 focus:outline-none transition"
+                      />
+                      <p className="text-zinc-500 text-xs mt-2">
+                        Enter the number to receive the STK push notification
+                      </p>
+                    </div>
 
-                  <input
-                    type="text"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="M-Pesa Phone (2547XXXXXXXX)"
-                    className="w-full mt-4 p-3 bg-zinc-800 rounded-xl text-sm"
-                  />
+                    <button
+                      onClick={checkout}
+                      className="w-full mt-6 bg-green-500 hover:bg-green-600 text-black font-semibold py-4 rounded-xl transition flex items-center justify-center gap-2"
+                    >
+                      <span>Complete Payment</span>
+                      <span>KES {total}</span>
+                    </button>
 
-                  <button
-                    onClick={checkout}
-                    className="w-full mt-4 bg-white text-black py-3 rounded-xl font-semibold hover:bg-zinc-200 transition"
-                  >
-                    Pay with M-Pesa
-                  </button>
+                    <p className="text-center text-zinc-500 text-xs mt-4">
+                      You will receive an M-Pesa prompt on your phone to complete the payment
+                    </p>
+                  </div>
                 </div>
-              </>
+              </div>
             )}
           </motion.div>
         </motion.div>
