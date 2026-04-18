@@ -80,9 +80,12 @@ export default function App() {
 
       {/* PRODUCTS */}
       <div className="grid md:grid-cols-3 gap-10 px-10 pb-20">
-        {products.map((p) => (
+        {products.map((p, i) => (
           <motion.div
             key={p._id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
             whileHover={{ scale: 1.03 }}
             className="group bg-zinc-900/40 backdrop-blur-lg p-6 rounded-3xl transition hover:bg-zinc-900/70"
           >
@@ -109,8 +112,16 @@ export default function App() {
 
       {/* CHECKOUT MODAL */}
       {showCheckout && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-zinc-900 p-8 rounded-3xl w-full max-w-md">
+        <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+        >
+          <motion.div 
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="bg-zinc-900 p-8 rounded-3xl w-full max-w-md"
+          >
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-semibold">Your Cart</h3>
               <button 
@@ -162,8 +173,8 @@ export default function App() {
                 </div>
               </>
             )}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
 
     </div>
