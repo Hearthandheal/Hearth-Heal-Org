@@ -14,7 +14,10 @@ interface Product {
 
 export default function App() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<Product[]>([]);
+  const [cart, setCart] = useState<Product[]>(() => {
+    const saved = localStorage.getItem('cart');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [phone, setPhone] = useState("2547XXXXXXXX");
   const [showCheckout, setShowCheckout] = useState(false);
 
@@ -22,6 +25,10 @@ export default function App() {
     axios.get(`${API_URL}/products`)
       .then(res => setProducts(res.data));
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(cart));
+  }, [cart]);
 
   const addToCart = (p: Product) => setCart([...cart, p]);
 
@@ -50,8 +57,9 @@ export default function App() {
 
       alert("Check your phone to complete payment");
       setCart([]);
+      localStorage.removeItem('cart');
       setShowCheckout(false);
-    } catch (err) {
+    } catch (err: any) {
       alert("Error: " + (err.response?.data?.error || err.message));
     }
   };
