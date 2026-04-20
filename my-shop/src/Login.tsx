@@ -55,8 +55,8 @@ export default function Login() {
           }}
         />
       ))}
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/60" />
+      {/* Dark overlay - lighter to show images better */}
+      <div className="absolute inset-0 bg-black/30" />
       
       {/* Content */}
       <div className="relative z-10 bg-zinc-900/90 p-8 rounded-2xl w-full max-w-md backdrop-blur-sm">
