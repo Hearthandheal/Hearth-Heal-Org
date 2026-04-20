@@ -18,7 +18,8 @@ export default function Login() {
         if (!isRegister) window.location.href = "/";
       }
     } catch (err: any) {
-      alert("Error: " + (err.response?.data || err.message));
+      const errorMsg = err.response?.data?.error || err.response?.data || err.message;
+      alert("Error: " + errorMsg);
     }
   };
 

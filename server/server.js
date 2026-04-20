@@ -19,7 +19,19 @@ app.use(express.json());
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/hearth_heal_shop')
   .then(() => console.log('✅ MongoDB Connected'))
-  .catch(err => console.error('❌ MongoDB Error:', err));
+  .catch(err => {
+    console.error('❌ MongoDB Error:', err.message);
+    console.error('Connection string:', process.env.MONGO_URI ? 'Set (hidden)' : 'NOT SET');
+  });
+
+// MongoDB event listeners
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB runtime error:', err.message);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.warn('⚠️ MongoDB disconnected');
+});
 
 // Routes
 app.use('/api/auth', authRoutes);

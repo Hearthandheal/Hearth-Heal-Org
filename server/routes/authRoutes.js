@@ -7,12 +7,23 @@ const router = express.Router();
 
 // Register
 router.post("/register", async (req, res) => {
-  const { name, email, password } = req.body;
+  try {
+    const { name, email, password } = req.body;
+    
+    // Check if user exists
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ error: "User already exists" });
+    }
 
-  const hashed = await bcrypt.hash(password, 10);
-  const user = await User.create({ name, email, password: hashed });
+    const hashed = await bcrypt.hash(password, 10);
+    const user = await User.create({ name, email, password: hashed });
 
-  res.json(user);
+    res.json({ message: "User created", userId: user._id });
+  } catch (err) {
+    console.error("Register error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // One-time admin seed (remove after use)
@@ -44,19 +55,25 @@ router.get("/seed-admin", async (req, res) => {
 
 // Login
 router.post("/login", async (req, res) => {
-  const user = await User.findOne({ email: req.body.email });
+  try {
+    const { email, password } = req.body;
+    
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-  if (!user) return res.status(404).json("User not found");
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(400).json({ error: "Wrong password" });
 
-  const match = await bcrypt.compare(req.body.password, user.password);
-  if (!match) return res.status(400).json("Wrong password");
+    const token = jwt.sign(
+      { id: user._id, isAdmin: user.isAdmin },
+      process.env.JWT_SECRET
+    );
 
-  const token = jwt.sign(
-    { id: user._id, isAdmin: user.isAdmin },
-    process.env.JWT_SECRET
-  );
-
-  res.json({ token });
+    res.json({ token });
+  } catch (err) {
+    console.error("Login error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;
