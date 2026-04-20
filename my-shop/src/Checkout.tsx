@@ -11,6 +11,7 @@ interface CartItem {
 
 export default function Checkout() {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -28,7 +29,9 @@ export default function Checkout() {
 
   const handlePay = async () => {
     if (!form.phone) return alert("Enter phone number");
+    if (cart.length === 0) return alert("Your cart is empty");
 
+    setLoading(true);
     try {
       // Create order first
       await axios.post(`${API_URL}/orders`, {
@@ -49,6 +52,8 @@ export default function Checkout() {
       alert("Check your phone to complete payment. Your cart has been cleared.");
     } catch (err: any) {
       alert("Error: " + (err.response?.data?.error || err.message));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -113,9 +118,14 @@ export default function Checkout() {
 
           <button
             onClick={handlePay}
-            className="mt-8 w-full py-4 rounded-xl bg-white text-black font-medium hover:opacity-90 transition"
+            disabled={loading}
+            className={`mt-8 w-full py-4 rounded-xl font-medium transition ${
+              loading 
+                ? "bg-zinc-600 text-zinc-300 cursor-not-allowed" 
+                : "bg-white text-black hover:opacity-90"
+            }`}
           >
-            Pay with M-Pesa
+            {loading ? "Processing..." : "Pay with M-Pesa"}
           </button>
 
         </div>
