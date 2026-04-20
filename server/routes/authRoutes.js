@@ -15,6 +15,33 @@ router.post("/register", async (req, res) => {
   res.json(user);
 });
 
+// One-time admin seed (remove after use)
+router.get("/seed-admin", async (req, res) => {
+  try {
+    const adminEmail = "admin@hearthheal.com";
+    const existing = await User.findOne({ email: adminEmail });
+    if (existing) {
+      return res.json({ message: "Admin already exists", email: adminEmail });
+    }
+    
+    const hashed = await bcrypt.hash("Admin123!", 10);
+    const admin = await User.create({
+      name: "Admin",
+      email: adminEmail,
+      password: hashed,
+      isAdmin: true,
+    });
+    
+    res.json({ 
+      message: "Admin created successfully!", 
+      email: adminEmail,
+      password: "Admin123!"
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Login
 router.post("/login", async (req, res) => {
   const user = await User.findOne({ email: req.body.email });
