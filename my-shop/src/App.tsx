@@ -89,7 +89,7 @@ export default function App() {
 
             <button
               onClick={() => addToCart(p)}
-              className="mt-6 w-full py-3 rounded-xl border border-zinc-700 hover:border-white hover:bg-white hover:text-black transition duration-300"
+              className="mt-6 w-full py-3 rounded-xl border border-zinc-700 hover:border-green-500 hover:bg-green-500 hover:text-black transition duration-300"
             >
               Add to Cart
             </button>

@@ -58,8 +58,8 @@ export default function ProductDetail() {
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
-              {/* Glass overlay effect */}
-              <div className="absolute inset-0 bg-white/5 backdrop-blur-[1px]" />
+              {/* Subtle dark overlay */}
+              <div className="absolute inset-0 bg-black/10" />
             </motion.div>
 
             {/* Thumbnails */}

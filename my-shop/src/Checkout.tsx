@@ -174,7 +174,7 @@ export default function Checkout() {
           <button
             onClick={handlePay}
             disabled={loading}
-            className="mt-8 w-full py-4 rounded-xl bg-white text-black font-medium hover:opacity-90 transition disabled:opacity-50"
+            className="mt-8 w-full py-4 rounded-xl bg-green-500 text-black font-medium hover:bg-green-400 transition disabled:opacity-50 disabled:bg-zinc-600"
           >
             {loading ? "Processing..." : "Pay with M-Pesa"}
           </button>

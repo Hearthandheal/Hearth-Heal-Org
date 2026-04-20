@@ -20,7 +20,7 @@ export default function Success() {
 
         <Link
           to="/"
-          className="inline-block bg-white text-black px-8 py-3 rounded-xl font-medium hover:opacity-90 transition"
+          className="inline-block bg-green-500 text-black px-8 py-3 rounded-xl font-medium hover:bg-green-400 transition"
         >
           Continue Shopping
         </Link>
