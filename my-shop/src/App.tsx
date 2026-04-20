@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://hearth-heal-api.onrender.com/api";
 
 export default function App() {
   const [products, setProducts] = useState([]);
