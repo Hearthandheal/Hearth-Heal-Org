@@ -6,6 +6,7 @@ import App from './App.tsx'
 import Login from './Login.tsx'
 import Admin from './Admin.tsx'
 import Checkout from './Checkout.tsx'
+import Success from './Success.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -21,6 +22,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/login" element={<Login />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/success" element={<Success />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

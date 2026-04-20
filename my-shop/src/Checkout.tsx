@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = "https://hearth-heal-api.onrender.com/api";
 
@@ -11,6 +12,7 @@ interface CartItem {
 }
 
 export default function Checkout() {
+  const navigate = useNavigate();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<null | "pending" | "failed" | "success">(null);
@@ -64,6 +66,9 @@ export default function Checkout() {
       localStorage.removeItem('cart');
       setCart([]);
       setStatus("success");
+      
+      // Redirect to success page
+      navigate("/success");
     } catch (err: any) {
       setStatus("failed");
       alert("Error: " + (err.response?.data?.error || err.message));
