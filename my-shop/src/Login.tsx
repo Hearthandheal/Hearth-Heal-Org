@@ -1,11 +1,27 @@
 import axios from "axios";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const API_URL = "https://hearth-heal-api.onrender.com/api";
+
+// Background images for slideshow
+const backgroundImages = [
+  "https://images.unsplash.com/photo-1551836020-4b6587e3c123?w=1920",
+  "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1920",
+  "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1920",
+];
 
 export default function Login() {
   const [isRegister, setIsRegister] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [currentImage, setCurrentImage] = useState(0);
+
+  // Auto-rotate background images every 5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentImage((prev) => (prev + 1) % backgroundImages.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   const submit = async () => {
     try {
@@ -24,8 +40,26 @@ export default function Login() {
   };
 
   return (
-    <div className="bg-black text-white min-h-screen flex items-center justify-center p-6">
-      <div className="bg-zinc-900 p-8 rounded-2xl w-full max-w-md">
+    <div className="relative text-white min-h-screen flex items-center justify-center p-6 overflow-hidden">
+      {/* Background Images */}
+      {backgroundImages.map((img, index) => (
+        <div
+          key={img}
+          className={`absolute inset-0 transition-opacity duration-1000 ${
+            index === currentImage ? "opacity-100" : "opacity-0"
+          }`}
+          style={{
+            backgroundImage: `url(${img})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        />
+      ))}
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/60" />
+      
+      {/* Content */}
+      <div className="relative z-10 bg-zinc-900/90 p-8 rounded-2xl w-full max-w-md backdrop-blur-sm">
         <h1 className="text-2xl font-bold mb-6 text-center">
           {isRegister ? "Register" : "Login"}
         </h1>
