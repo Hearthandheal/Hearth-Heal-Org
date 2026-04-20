@@ -4,9 +4,17 @@ import { motion } from "framer-motion";
 
 const API_URL = "https://hearth-heal-api.onrender.com/api";
 
+interface Product {
+  _id: string;
+  name: string;
+  price: number;
+  description?: string;
+  image?: string;
+}
+
 export default function App() {
-  const [products, setProducts] = useState([]);
-  const [cart, setCart] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [cart, setCart] = useState<Product[]>([]);
   const [phone, setPhone] = useState("2547XXXXXXXX");
   const [showCheckout, setShowCheckout] = useState(false);
 
@@ -15,9 +23,9 @@ export default function App() {
       .then(res => setProducts(res.data));
   }, []);
 
-  const addToCart = (p) => setCart([...cart, p]);
+  const addToCart = (p: Product) => setCart([...cart, p]);
 
-  const removeFromCart = (i) => {
+  const removeFromCart = (i: number) => {
     const newCart = [...cart];
     newCart.splice(i, 1);
     setCart(newCart);

@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://hearth-heal-api.onrender.com/api";
 
 export default function Admin() {
   const [product, setProduct] = useState({ 
@@ -28,7 +28,7 @@ export default function Admin() {
       
       alert("Product added successfully!");
       setProduct({ name: "", price: "", description: "", image: "" });
-    } catch (err) {
+    } catch (err: any) {
       alert("Error: " + (err.response?.data || err.message));
     }
   };

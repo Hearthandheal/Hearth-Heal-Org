@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://hearth-heal-api.onrender.com/api";
 
 export default function Login() {
   const [isRegister, setIsRegister] = useState(false);
@@ -17,7 +17,7 @@ export default function Login() {
         alert(isRegister ? "Registered! Please login." : "Logged in!");
         if (!isRegister) window.location.href = "/";
       }
-    } catch (err) {
+    } catch (err: any) {
       alert("Error: " + (err.response?.data || err.message));
     }
   };
