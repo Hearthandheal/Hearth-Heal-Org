@@ -54,7 +54,7 @@ router.post("/stk", async (req, res) => {
         PartyB: process.env.SHORTCODE,
         PhoneNumber: phone,
         CallBackURL: process.env.CALLBACK_URL,
-        AccountReference: "Hearth&Heal",
+        AccountReference: req.body.orderId || "Hearth&Heal",
         TransactionDesc: "Payment",
       },
       {
@@ -71,37 +71,49 @@ router.post("/stk", async (req, res) => {
 
 // M-Pesa Callback
 router.post("/callback", async (req, res) => {
-  const data = req.body;
+  try {
+    const data = req.body;
 
-  // Extract payment result
-  const resultCode = data.Body.stkCallback.ResultCode;
-  const checkoutRequestID = data.Body.stkCallback.CheckoutRequestID;
+    // Extract payment result
+    const resultCode = data.Body.stkCallback.ResultCode;
+    const checkoutRequestID = data.Body.stkCallback.CheckoutRequestID;
 
-  if (resultCode === 0) {
-    // SUCCESS
-    console.log("Payment successful:", checkoutRequestID);
+    // Get orderId from AccountReference (passed during STK push)
+    const callbackMetadata = data.Body.stkCallback.CallbackMetadata?.Item || [];
+    const orderId = callbackMetadata.find(i => i.Name === "AccountReference")?.Value;
+    const mpesaReceipt = callbackMetadata.find(i => i.Name === "MpesaReceiptNumber")?.Value;
 
-    // Get transaction details
-    const callbackMetadata = data.Body.stkCallback.CallbackMetadata.Item;
-    const amount = callbackMetadata.find(item => item.Name === "Amount")?.Value;
-    const mpesaReceipt = callbackMetadata.find(item => item.Name === "MpesaReceiptNumber")?.Value;
-    const phone = callbackMetadata.find(item => item.Name === "PhoneNumber")?.Value;
-
-    console.log({ amount, mpesaReceipt, phone });
-
-    // Find and update order
-    const order = await Order.findOne({ phone, amount, status: "pending" });
-    if (order) {
-      order.status = "paid";
-      order.mpesaReceipt = mpesaReceipt;
-      await order.save();
-      console.log("Order updated to paid:", order._id);
+    if (!orderId) {
+      console.log("No orderId found in callback");
+      return res.json({ ResultCode: 0, ResultDesc: "Received" });
     }
-  } else {
-    console.log("Payment failed:", resultCode, data.Body.stkCallback.ResultDesc);
-  }
 
-  res.json({ ResultCode: 0, ResultDesc: "Success" });
+    if (resultCode === 0) {
+      // SUCCESS
+      console.log("Payment successful:", checkoutRequestID, "Order:", orderId);
+
+      await Order.findByIdAndUpdate(orderId, {
+        status: "paid",
+        mpesaReceipt: mpesaReceipt || null,
+      });
+
+      console.log("Order marked as paid:", orderId);
+    } else {
+      // FAILED
+      console.log("Payment failed:", resultCode, data.Body.stkCallback.ResultDesc);
+
+      await Order.findByIdAndUpdate(orderId, {
+        status: "failed",
+      });
+
+      console.log("Order marked as failed:", orderId);
+    }
+
+    res.json({ ResultCode: 0, ResultDesc: "Success" });
+  } catch (err) {
+    console.error("Callback error:", err.message);
+    res.json({ ResultCode: 0, ResultDesc: "Received" });
+  }
 });
 
 export default router;
