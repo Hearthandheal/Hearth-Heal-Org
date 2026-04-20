@@ -3,6 +3,7 @@ import axios from "axios";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
+// API URL - deployed backend
 const API_URL = "https://hearth-heal-api.onrender.com/api";
 
 interface CartItem {
