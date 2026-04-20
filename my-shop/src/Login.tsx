@@ -3,11 +3,19 @@ import { useState, useEffect } from "react";
 
 const API_URL = "https://hearth-heal-api.onrender.com/api";
 
-// Background images for slideshow
+// Background images from community folder
 const backgroundImages = [
-  "https://images.unsplash.com/photo-1551836020-4b6587e3c123?w=1920",
-  "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1920",
-  "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1920",
+  "/images/community/community (1).jpg",
+  "/images/community/community (2).jpg",
+  "/images/community/community (3).jpg",
+  "/images/community/community (4).jpg",
+  "/images/community/community (5).jpg",
+  "/images/community/community (6).jpg",
+  "/images/community/community (7).jpg",
+  "/images/community/community (8).jpg",
+  "/images/community/community (9).jpg",
+  "/images/community/community (10).jpg",
+  "/images/community/community (11).jpg",
 ];
 
 export default function Login() {
