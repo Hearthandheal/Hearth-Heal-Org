@@ -211,12 +211,15 @@ hr {
 </div>
 
 <script>
-function checkout() {
+let stripeClientSecret = null;
+
+async function checkout() {
     const name = document.getElementById('name').value;
     const email = document.getElementById('email').value;
     const phone = document.getElementById('phone').value;
     const city = document.getElementById('city').value;
     const address = document.getElementById('address').value;
+    const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
     const button = document.getElementById('payButton');
 
     if (!name || !email || !phone || !address) {
@@ -227,12 +230,39 @@ function checkout() {
     button.disabled = true;
     button.textContent = 'Processing...';
 
-    // Simulate payment
-    setTimeout(() => {
-        alert('Payment Successful!');
-        button.disabled = false;
-        button.textContent = 'Complete Purchase';
-    }, 2000);
+    const amount = 120; // Mock amount - in real app, calculate from cart
+
+    if (paymentMethod === 'mpesa') {
+        try {
+            const response = await fetch('/mpesa-pay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, amount })
+            });
+            const data = await response.json();
+            alert(data.message || 'M-Pesa STK Push sent!');
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    } else if (paymentMethod === 'card') {
+        try {
+            const response = await fetch('/create-payment-intent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount })
+            });
+            const data = await response.json();
+            stripeClientSecret = data.clientSecret;
+            alert('Payment intent created. Complete with Stripe Elements (coming soon)');
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    } else {
+        alert('Payment method not implemented yet');
+    }
+
+    button.disabled = false;
+    button.textContent = 'Complete Purchase';
 }
 </script>
 
