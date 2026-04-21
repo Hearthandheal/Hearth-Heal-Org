@@ -23,7 +23,7 @@ export default function Login() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [currentImage, setCurrentImage] = useState(0);
 
-  // Auto-rotate background images every 5 seconds
+  // Auto-rotate background images every 5 seconds - v2
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentImage((prev) => (prev + 1) % backgroundImages.length);
