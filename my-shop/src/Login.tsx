@@ -1,6 +1,5 @@
 import axios from "axios";
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 
 const API_URL = "https://hearth-heal-api.onrender.com/api";
 
@@ -89,24 +88,12 @@ export default function Login() {
           onChange={e => setForm({...form, email: e.target.value})}
         />
         <input 
-          className="w-full mb-2 p-3 bg-zinc-800 rounded-lg"
+          className="w-full mb-4 p-3 bg-zinc-800 rounded-lg"
           placeholder="Password"
           type="password"
           value={form.password}
           onChange={e => setForm({...form, password: e.target.value})}
         />
-
-        {/* Forgot Password Link */}
-        {!isRegister && (
-          <div className="text-right mb-4">
-            <Link 
-              to="/forgot-password" 
-              className="text-sm text-gray-400 hover:text-green-400 transition-colors"
-            >
-              Forgot password?
-            </Link>
-          </div>
-        )}
 
         <button 
           onClick={submit}
