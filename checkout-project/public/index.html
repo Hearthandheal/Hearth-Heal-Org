@@ -3,37 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Secure Checkout</title>
+<title>Premium Checkout</title>
+
+<script src="https://js.stripe.com/v3/"></script>
 
 <style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
     background: #0a0a0a;
     color: white;
-    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
 }
 
 .container {
-    max-width: 1100px;
+    max-width: 900px;
     margin: auto;
-    padding: 40px 20px;
-}
-
-h2 {
-    margin-bottom: 20px;
-    color: white;
-}
-
-.checkout {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 30px;
+    padding: 40px;
 }
 
 .card {
@@ -41,18 +27,18 @@ h2 {
     padding: 25px;
     border-radius: 16px;
     border: 1px solid rgba(255,255,255,0.1);
-}
-
-h3 {
-    color: white;
     margin-bottom: 20px;
 }
 
-input, select {
+h2, h3 {
+    color: white;
+    margin-bottom: 15px;
+}
+
+input {
     width: 100%;
     padding: 14px;
-    margin-top: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     border-radius: 10px;
     border: 1px solid #333;
     background: #1a1a1a;
@@ -65,52 +51,24 @@ input:focus {
     border-color: #39ff14;
 }
 
-.row {
-    display: flex;
-    gap: 15px;
-}
-
-.row input {
-    flex: 1;
-}
-
-.payment-method {
-    display: flex;
-    gap: 10px;
+#card-element {
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #333;
+    background: #1a1a1a;
     margin-bottom: 15px;
-    cursor: pointer;
-    color: #aaa;
-    align-items: center;
-}
-
-.payment-method input {
-    width: auto;
-    margin: 0;
-}
-
-.summary-item {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 15px;
-    color: #aaa;
-}
-
-.total {
-    font-size: 18px;
-    font-weight: bold;
-    color: white;
 }
 
 button {
     width: 100%;
-    padding: 16px;
-    border: none;
-    border-radius: 12px;
+    padding: 15px;
     background: #39ff14;
     color: black;
-    font-size: 16px;
-    font-weight: 600;
+    border: none;
+    border-radius: 10px;
     cursor: pointer;
+    font-weight: 600;
+    font-size: 16px;
     transition: 0.3s;
 }
 
@@ -123,146 +81,112 @@ button:disabled {
     color: #666;
     cursor: not-allowed;
 }
-
-hr {
-    border: none;
-    border-top: 1px solid #333;
-    margin: 20px 0;
-}
-
-@media(max-width: 900px) {
-    .checkout {
-        grid-template-columns: 1fr;
-    }
-}
 </style>
 </head>
 
 <body>
 
 <div class="container">
-    <h2>Checkout</h2>
 
-    <div class="checkout">
+    <div class="card">
+        <h2>Checkout</h2>
 
-        <!-- LEFT SIDE -->
-        <div>
+        <input id="name" placeholder="Full Name">
+        <input id="email" placeholder="Email">
 
-            <div class="card">
-                <h3>Shipping Details</h3>
+        <h3>Payment - Credit/Debit Card</h3>
 
-                <input type="text" id="name" placeholder="Full Name">
-                <input type="email" id="email" placeholder="Email Address">
+        <div id="card-element"></div>
 
-                <div class="row">
-                    <input type="text" id="phone" placeholder="Phone (2547XXXXXXXX)">
-                    <input type="text" id="city" placeholder="City">
-                </div>
-
-                <input type="text" id="address" placeholder="Delivery Address">
-            </div>
-
-            <div class="card">
-                <h3>Payment Method</h3>
-
-                <label class="payment-method">
-                    <input type="radio" name="payment" value="mpesa" checked>
-                    M-Pesa
-                </label>
-
-                <label class="payment-method">
-                    <input type="radio" name="payment" value="card">
-                    Credit / Debit Card (Coming Soon)
-                </label>
-
-                <label class="payment-method">
-                    <input type="radio" name="payment" value="paypal">
-                    PayPal (Coming Soon)
-                </label>
-            </div>
-
-        </div>
-
-        <!-- RIGHT SIDE -->
-        <div class="card">
-            <h3>Order Summary</h3>
-
-            <div class="summary-item">
-                <span>Product Name</span>
-                <span>KES 120</span>
-            </div>
-
-            <div class="summary-item">
-                <span>Shipping</span>
-                <span>Calculated at checkout</span>
-            </div>
-
-            <hr>
-
-            <div class="summary-item total">
-                <span>Total</span>
-                <span>KES 120</span>
-            </div>
-
-            <button onclick="checkout()" id="payButton">Complete Purchase</button>
-        </div>
-
+        <button onclick="pay()" id="cardButton">Pay with Card</button>
     </div>
+
+    <div class="card">
+        <h3>M-Pesa</h3>
+
+        <input id="phone" placeholder="Phone (2547XXXXXXXX)">
+        <button onclick="mpesa()" id="mpesaButton">Pay with M-Pesa</button>
+    </div>
+
 </div>
 
 <script>
-let stripeClientSecret = null;
+const stripe = Stripe("pk_test_YOUR_STRIPE_PUBLIC_KEY"); // Replace with your key
 
-async function checkout() {
-    const name = document.getElementById('name').value;
-    const email = document.getElementById('email').value;
-    const phone = document.getElementById('phone').value;
-    const city = document.getElementById('city').value;
-    const address = document.getElementById('address').value;
-    const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
-    const button = document.getElementById('payButton');
+const elements = stripe.elements();
+const card = elements.create("card", {
+    style: {
+        base: {
+            color: '#ffffff',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontSize: '16px',
+            '::placeholder': {
+                color: '#666'
+            }
+        }
+    }
+});
+card.mount("#card-element");
 
-    if (!name || !email || !phone || !address) {
-        alert('Please fill in all required fields');
+async function pay() {
+    const cardButton = document.getElementById('cardButton');
+    cardButton.disabled = true;
+    cardButton.textContent = 'Processing...';
+
+    const res = await fetch("/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: 130 }) // $130 (in cents handled by server)
+    });
+
+    const data = await res.json();
+
+    const result = await stripe.confirmCardPayment(data.clientSecret, {
+        payment_method: {
+            card: card,
+            billing_details: {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value
+            }
+        }
+    });
+
+    if (result.error) {
+        alert(result.error.message);
+        cardButton.disabled = false;
+        cardButton.textContent = 'Pay with Card';
+    } else {
+        alert("Payment Successful 🎉");
+        cardButton.disabled = false;
+        cardButton.textContent = 'Pay with Card';
+    }
+}
+
+async function mpesa() {
+    const phone = document.getElementById("phone").value;
+    const mpesaButton = document.getElementById('mpesaButton');
+    
+    if (!phone || phone.length < 12) {
+        alert('Please enter a valid Kenyan phone number (2547XXXXXXXX)');
         return;
     }
 
-    button.disabled = true;
-    button.textContent = 'Processing...';
+    mpesaButton.disabled = true;
+    mpesaButton.textContent = 'Processing...';
 
-    const amount = 120; // Mock amount - in real app, calculate from cart
-
-    if (paymentMethod === 'mpesa') {
-        try {
-            const response = await fetch('/mpesa-pay', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, amount })
-            });
-            const data = await response.json();
-            alert(data.message || 'M-Pesa STK Push sent!');
-        } catch (error) {
-            alert('Error: ' + error.message);
-        }
-    } else if (paymentMethod === 'card') {
-        try {
-            const response = await fetch('/create-payment-intent', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount })
-            });
-            const data = await response.json();
-            stripeClientSecret = data.clientSecret;
-            alert('Payment intent created. Complete with Stripe Elements (coming soon)');
-        } catch (error) {
-            alert('Error: ' + error.message);
-        }
-    } else {
-        alert('Payment method not implemented yet');
+    try {
+        await fetch("/mpesa-pay", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone, amount: 130 })
+        });
+        alert("Check your phone for M-Pesa prompt 📲");
+    } catch (error) {
+        alert('Error: ' + error.message);
+    } finally {
+        mpesaButton.disabled = false;
+        mpesaButton.textContent = 'Pay with M-Pesa';
     }
-
-    button.disabled = false;
-    button.textContent = 'Complete Purchase';
 }
 </script>
 
