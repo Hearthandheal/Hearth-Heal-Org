@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
+
+const API_URL = "https://hearth-heal-api.onrender.com/api";
 
 const backgroundImages = [
   "/images/community/community (4).jpg",
@@ -13,6 +16,8 @@ const backgroundImages = [
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
 
   // Auto-rotate background images every 5 seconds
@@ -23,10 +28,19 @@ export default function ForgotPassword() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock submission
-    setSubmitted(true);
+    setError('');
+    setLoading(true);
+    
+    try {
+      const res = await axios.post(`${API_URL}/auth/forgot-password`, { email });
+      setSubmitted(true);
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -80,18 +94,26 @@ export default function ForgotPassword() {
                   className="w-full p-4 bg-zinc-800 rounded-xl text-white border border-zinc-700 focus:border-green-500 focus:outline-none transition-colors"
                   placeholder="your@email.com"
                   required
+                  disabled={loading}
                 />
               </div>
 
+              {error && (
+                <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
+                  {error}
+                </div>
+              )}
+
               <button
                 type="submit"
-                className="w-full py-4 rounded-xl font-semibold text-black transition-all duration-300 hover:scale-[1.02]"
+                disabled={loading}
+                className="w-full py-4 rounded-xl font-semibold text-black transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   background: 'linear-gradient(180deg, #39ff14 0%, #2dd30a 100%)',
                   boxShadow: '0 8px 32px rgba(57, 255, 20, 0.3)',
                 }}
               >
-                Send Reset Link
+                {loading ? "Checking..." : "Send Reset Link"}
               </button>
             </form>
           ) : (

@@ -53,6 +53,28 @@ router.get("/seed-admin", async (req, res) => {
   }
 });
 
+// Forgot Password - Check if user exists
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: "No account found for this email. Sign up first." });
+    }
+
+    // In production: Send email with reset link
+    // For now: Just return success (mock)
+    res.json({ 
+      message: "Password reset instructions sent to your email",
+      email: email 
+    });
+  } catch (err) {
+    console.error("Forgot password error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Login
 router.post("/login", async (req, res) => {
   try {
