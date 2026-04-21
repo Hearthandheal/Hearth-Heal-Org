@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
-// API URL - deployed backend (v2)
 const API_URL = "https://hearth-heal-api.onrender.com/api";
 
 interface CartItem {
@@ -16,20 +14,14 @@ export default function Checkout() {
   const navigate = useNavigate();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<null | "pending" | "failed" | "success">(null);
   const [form, setForm] = useState({
     name: "",
+    email: "",
     phone: "",
+    city: "",
     address: "",
   });
-
-  // 📱 Format Kenyan phone automatically
-  const formatPhone = (value: string) => {
-    let v = value.replace(/\D/g, "");
-    if (v.startsWith("0")) v = "254" + v.slice(1);
-    if (!v.startsWith("254")) v = "254" + v;
-    return v.slice(0, 12);
-  };
+  const [paymentMethod, setPaymentMethod] = useState("mpesa");
 
   useEffect(() => {
     const saved = localStorage.getItem('cart');
@@ -39,6 +31,15 @@ export default function Checkout() {
   }, []);
 
   const total = cart.reduce((sum, item) => sum + item.price, 0);
+  const shipping = 0;
+  const grandTotal = total + shipping;
+
+  const formatPhone = (value: string) => {
+    let v = value.replace(/\D/g, "");
+    if (v.startsWith("0")) v = "254" + v.slice(1);
+    if (!v.startsWith("254")) v = "254" + v;
+    return v.slice(0, 12);
+  };
 
   const handlePay = async () => {
     if (!form.phone || form.phone.length < 12) {
@@ -47,31 +48,23 @@ export default function Checkout() {
     if (cart.length === 0) return alert("Your cart is empty");
 
     setLoading(true);
-    setStatus("pending");
     try {
-      // Create order first
       const orderRes = await axios.post(`${API_URL}/orders`, {
         ...form,
         products: cart,
-        amount: total,
+        amount: grandTotal,
       });
 
-      // Initiate M-Pesa payment
       await axios.post(`${API_URL}/payments/stk`, {
         phone: form.phone,
-        amount: total,
+        amount: grandTotal,
         orderId: orderRes.data._id,
       });
 
-      // Clear cart
       localStorage.removeItem('cart');
       setCart([]);
-      setStatus("success");
-      
-      // Redirect to success page
       navigate("/success");
     } catch (err: any) {
-      setStatus("failed");
       alert("Error: " + (err.response?.data?.error || err.message));
     } finally {
       setLoading(false);
@@ -79,109 +72,274 @@ export default function Checkout() {
   };
 
   return (
-    <div className="bg-black text-white min-h-screen px-6 md:px-20 py-16">
+    <div style={{ 
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto',
+      background: '#0a0a0a', 
+      minHeight: '100vh',
+      padding: '40px 20px'
+    }}>
+      <div style={{ maxWidth: '1100px', margin: 'auto' }}>
+        <h2 style={{ 
+          color: 'white', 
+          marginBottom: '20px',
+          fontSize: '28px',
+          fontWeight: 600
+        }}>
+          Checkout
+        </h2>
 
-      {/* HEADER */}
-      <motion.h1
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-semibold mb-10"
-      >
-        Checkout
-      </motion.h1>
-
-      {/* STATUS UI */}
-      {status === "pending" && (
-        <div className="mb-8 text-green-400">
-          Waiting for payment confirmation on your phone...
-        </div>
-      )}
-      {status === "failed" && (
-        <div className="mb-8 text-red-400">
-          Payment failed. Try again.
-        </div>
-      )}
-      {status === "success" && (
-        <div className="mb-8 text-green-400">
-          Payment initiated! Check your phone to complete.
-        </div>
-      )}
-
-      <div className="grid md:grid-cols-2 gap-12">
-
-        {/* LEFT - FORM */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="space-y-6"
-        >
-
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '2fr 1fr', 
+          gap: '30px'
+        }}>
+          {/* LEFT SIDE */}
           <div>
-            <label className="text-sm text-zinc-400">Full Name</label>
-            <input
-              placeholder="Full Name"
-              className="w-full mt-2 p-4 bg-zinc-900 rounded-xl outline-none focus:ring-1 focus:ring-white"
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-          </div>
+            {/* Shipping Details */}
+            <div style={{
+              background: 'rgba(20, 20, 20, 0.9)',
+              padding: '25px',
+              borderRadius: '16px',
+              border: '1px solid rgba(255,255,255,0.1)',
+              marginBottom: '20px'
+            }}>
+              <h3 style={{ color: 'white', margin: '0 0 20px 0' }}>Shipping Details</h3>
 
-          <div>
-            <label className="text-sm text-zinc-400">Phone (M-Pesa)</label>
-            <input
-              placeholder="2547XXXXXXXX"
-              value={form.phone}
-              className="w-full mt-2 p-4 bg-zinc-900 rounded-xl outline-none focus:ring-1 focus:ring-white"
-              onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })}
-            />
-          </div>
+              <input
+                type="text"
+                placeholder="Full Name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  marginTop: '10px',
+                  marginBottom: '20px',
+                  borderRadius: '10px',
+                  border: '1px solid #333',
+                  background: '#1a1a1a',
+                  color: 'white',
+                  fontSize: '14px',
+                  outline: 'none'
+                }}
+              />
 
-          <div>
-            <label className="text-sm text-zinc-400">Delivery Address</label>
-            <input
-              placeholder="Delivery Address"
-              className="w-full mt-2 p-4 bg-zinc-900 rounded-xl outline-none focus:ring-1 focus:ring-white"
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-            />
-          </div>
+              <input
+                type="email"
+                placeholder="Email Address"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  marginTop: '10px',
+                  marginBottom: '20px',
+                  borderRadius: '10px',
+                  border: '1px solid #333',
+                  background: '#1a1a1a',
+                  color: 'white',
+                  fontSize: '14px',
+                  outline: 'none'
+                }}
+              />
 
-        </motion.div>
-
-        {/* RIGHT - ORDER SUMMARY */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="bg-zinc-900/40 p-6 rounded-3xl backdrop-blur-lg"
-        >
-
-          <h2 className="text-xl mb-6">Order Summary</h2>
-
-          <div className="space-y-4">
-            {cart.map((item, i) => (
-              <div key={i} className="flex justify-between text-zinc-300">
-                <span>{item.name}</span>
-                <span>KES {item.price}</span>
+              <div style={{ display: 'flex', gap: '15px' }}>
+                <input
+                  type="text"
+                  placeholder="Phone (2547XXXXXXXX)"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })}
+                  style={{
+                    flex: 1,
+                    padding: '14px',
+                    marginTop: '10px',
+                    marginBottom: '20px',
+                    borderRadius: '10px',
+                    border: '1px solid #333',
+                    background: '#1a1a1a',
+                    color: 'white',
+                    fontSize: '14px',
+                    outline: 'none'
+                  }}
+                />
+                <input
+                  type="text"
+                  placeholder="City"
+                  value={form.city}
+                  onChange={(e) => setForm({ ...form, city: e.target.value })}
+                  style={{
+                    flex: 1,
+                    padding: '14px',
+                    marginTop: '10px',
+                    marginBottom: '20px',
+                    borderRadius: '10px',
+                    border: '1px solid #333',
+                    background: '#1a1a1a',
+                    color: 'white',
+                    fontSize: '14px',
+                    outline: 'none'
+                  }}
+                />
               </div>
-            ))}
+
+              <input
+                type="text"
+                placeholder="Delivery Address"
+                value={form.address}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  marginTop: '10px',
+                  marginBottom: '20px',
+                  borderRadius: '10px',
+                  border: '1px solid #333',
+                  background: '#1a1a1a',
+                  color: 'white',
+                  fontSize: '14px',
+                  outline: 'none'
+                }}
+              />
+            </div>
+
+            {/* Payment Method */}
+            <div style={{
+              background: 'rgba(20, 20, 20, 0.9)',
+              padding: '25px',
+              borderRadius: '16px',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+              <h3 style={{ color: 'white', margin: '0 0 20px 0' }}>Payment Method</h3>
+
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                marginBottom: '15px',
+                cursor: 'pointer',
+                color: '#aaa'
+              }}>
+                <input
+                  type="radio"
+                  name="payment"
+                  value="mpesa"
+                  checked={paymentMethod === "mpesa"}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  style={{ width: 'auto' }}
+                />
+                M-Pesa
+              </label>
+
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                marginBottom: '15px',
+                cursor: 'pointer',
+                color: '#aaa'
+              }}>
+                <input
+                  type="radio"
+                  name="payment"
+                  value="card"
+                  checked={paymentMethod === "card"}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  style={{ width: 'auto' }}
+                />
+                Credit / Debit Card (Coming Soon)
+              </label>
+
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                marginBottom: '15px',
+                cursor: 'pointer',
+                color: '#aaa'
+              }}>
+                <input
+                  type="radio"
+                  name="payment"
+                  value="paypal"
+                  checked={paymentMethod === "paypal"}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  style={{ width: 'auto' }}
+                />
+                PayPal (Coming Soon)
+              </label>
+            </div>
           </div>
 
-          <div className="border-t border-zinc-700 my-6"></div>
+          {/* RIGHT SIDE - Order Summary */}
+          <div style={{
+            background: 'rgba(20, 20, 20, 0.9)',
+            padding: '25px',
+            borderRadius: '16px',
+            border: '1px solid rgba(255,255,255,0.1)',
+            height: 'fit-content'
+          }}>
+            <h3 style={{ color: 'white', margin: '0 0 20px 0' }}>Order Summary</h3>
 
-          <div className="flex justify-between text-lg font-medium">
-            <span>Total</span>
-            <span>KES {total}</span>
+            <div>
+              {cart.map((item, i) => (
+                <div key={i} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginBottom: '15px',
+                  color: '#aaa'
+                }}>
+                  <span>{item.name}</span>
+                  <span>KES {item.price}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: '15px',
+              color: '#aaa'
+            }}>
+              <span>Shipping</span>
+              <span>{shipping === 0 ? 'Calculated at checkout' : `KES ${shipping}`}</span>
+            </div>
+
+            <hr style={{ border: 'none', borderTop: '1px solid #333', margin: '20px 0' }} />
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              color: 'white'
+            }}>
+              <span>Total</span>
+              <span>KES {grandTotal}</span>
+            </div>
+
+            <button
+              onClick={handlePay}
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '16px',
+                border: 'none',
+                borderRadius: '12px',
+                background: loading ? '#333' : '#39ff14',
+                color: loading ? '#666' : 'black',
+                fontSize: '16px',
+                fontWeight: 600,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: '0.3s',
+                marginTop: '20px'
+              }}
+            >
+              {loading ? "Processing..." : "Complete Purchase"}
+            </button>
           </div>
 
-          <button
-            onClick={handlePay}
-            disabled={loading}
-            className="mt-8 w-full py-4 rounded-xl bg-green-500 text-black font-medium hover:bg-green-400 transition disabled:opacity-50 disabled:bg-zinc-600"
-          >
-            {loading ? "Processing..." : "Pay with M-Pesa"}
-          </button>
-
-        </motion.div>
+        </div>
       </div>
-
     </div>
   );
 }
