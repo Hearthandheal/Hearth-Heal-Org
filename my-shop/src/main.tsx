@@ -8,6 +8,7 @@ import Admin from './Admin.tsx'
 import Checkout from './Checkout.tsx'
 import Success from './Success.tsx'
 import ProductDetail from './ProductDetail.tsx'
+import ForgotPassword from './ForgotPassword.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -25,6 +26,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/success" element={<Success />} />
         <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
