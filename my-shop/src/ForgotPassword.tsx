@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
@@ -12,6 +12,14 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
+
+  // Auto-rotate background images every 5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentImage((prev) => (prev + 1) % backgroundImages.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
