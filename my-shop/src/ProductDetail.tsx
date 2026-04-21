@@ -283,7 +283,7 @@ export default function ProductDetail() {
                   </div>
                   <div>
                     <h4 className="text-white font-medium mb-2">Shipping</h4>
-                    <p className="text-gray-400">Free delivery within Nairobi</p>
+                    <p className="text-gray-400">Calculated at checkout</p>
                   </div>
                 </div>
               )}
