@@ -36,7 +36,7 @@ export default function App() {
   };
 
   return (
-    <div className="bg-black text-white min-h-screen font-sans">
+    <div className="bg-black text-white min-h-screen font-sans" style={{backgroundColor: '#000'}}>
 
       {/* NAVBAR */}
       <div className="flex justify-between items-center px-10 py-6 border-b border-zinc-800">

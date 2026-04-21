@@ -39,6 +39,8 @@
 
 body {
   margin: 0;
+  background-color: #0a0a0a !important;
+  color: #e5e5e5 !important;
 }
 
 h1,
