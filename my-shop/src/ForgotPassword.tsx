@@ -3,9 +3,11 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
 const backgroundImages = [
-  "/images/community/community (1).jpg",
-  "/images/community/community (2).jpg",
-  "/images/community/community (3).jpg",
+  "/images/community/community (4).jpg",
+  "/images/community/community (5).jpg",
+  "/images/community/community (6).jpg",
+  "/images/community/community (7).jpg",
+  "/images/community/community (8).jpg",
 ];
 
 export default function ForgotPassword() {
