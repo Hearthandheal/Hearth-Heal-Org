@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure Checkout</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+    background: #0a0a0a;
+    color: white;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1100px;
+    margin: auto;
+    padding: 40px 20px;
+}
+
+h2 {
+    margin-bottom: 20px;
+    color: white;
+}
+
+.checkout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+}
+
+.card {
+    background: rgba(20, 20, 20, 0.9);
+    padding: 25px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+h3 {
+    color: white;
+    margin-bottom: 20px;
+}
+
+input, select {
+    width: 100%;
+    padding: 14px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    border: 1px solid #333;
+    background: #1a1a1a;
+    color: white;
+    font-size: 14px;
+    outline: none;
+}
+
+input:focus {
+    border-color: #39ff14;
+}
+
+.row {
+    display: flex;
+    gap: 15px;
+}
+
+.row input {
+    flex: 1;
+}
+
+.payment-method {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    color: #aaa;
+    align-items: center;
+}
+
+.payment-method input {
+    width: auto;
+    margin: 0;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    color: #aaa;
+}
+
+.total {
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+}
+
+button {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    background: #39ff14;
+    color: black;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: #2dd30a;
+}
+
+button:disabled {
+    background: #333;
+    color: #666;
+    cursor: not-allowed;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #333;
+    margin: 20px 0;
+}
+
+@media(max-width: 900px) {
+    .checkout {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>Checkout</h2>
+
+    <div class="checkout">
+
+        <!-- LEFT SIDE -->
+        <div>
+
+            <div class="card">
+                <h3>Shipping Details</h3>
+
+                <input type="text" id="name" placeholder="Full Name">
+                <input type="email" id="email" placeholder="Email Address">
+
+                <div class="row">
+                    <input type="text" id="phone" placeholder="Phone (2547XXXXXXXX)">
+                    <input type="text" id="city" placeholder="City">
+                </div>
+
+                <input type="text" id="address" placeholder="Delivery Address">
+            </div>
+
+            <div class="card">
+                <h3>Payment Method</h3>
+
+                <label class="payment-method">
+                    <input type="radio" name="payment" value="mpesa" checked>
+                    M-Pesa
+                </label>
+
+                <label class="payment-method">
+                    <input type="radio" name="payment" value="card">
+                    Credit / Debit Card (Coming Soon)
+                </label>
+
+                <label class="payment-method">
+                    <input type="radio" name="payment" value="paypal">
+                    PayPal (Coming Soon)
+                </label>
+            </div>
+
+        </div>
+
+        <!-- RIGHT SIDE -->
+        <div class="card">
+            <h3>Order Summary</h3>
+
+            <div class="summary-item">
+                <span>Product Name</span>
+                <span>KES 120</span>
+            </div>
+
+            <div class="summary-item">
+                <span>Shipping</span>
+                <span>Calculated at checkout</span>
+            </div>
+
+            <hr>
+
+            <div class="summary-item total">
+                <span>Total</span>
+                <span>KES 120</span>
+            </div>
+
+            <button onclick="checkout()" id="payButton">Complete Purchase</button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function checkout() {
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const phone = document.getElementById('phone').value;
+    const city = document.getElementById('city').value;
+    const address = document.getElementById('address').value;
+    const button = document.getElementById('payButton');
+
+    if (!name || !email || !phone || !address) {
+        alert('Please fill in all required fields');
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = 'Processing...';
+
+    // Simulate payment
+    setTimeout(() => {
+        alert('Payment Successful!');
+        button.disabled = false;
+        button.textContent = 'Complete Purchase';
+    }, 2000);
+}
+</script>
+
+</body>
+</html>
