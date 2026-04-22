@@ -19,25 +19,6 @@ export default function App() {
     const saved = localStorage.getItem('cart');
     return saved ? JSON.parse(saved) : [];
   });
-  const [profilePic, setProfilePic] = useState(() => {
-    const saved = localStorage.getItem('profilePic');
-    return saved || '/images/community/community (1).jpg';
-  });
-  const [showProfilePicker, setShowProfilePicker] = useState(false);
-
-  const profileOptions = [
-    '/images/community/community (1).jpg',
-    '/images/community/community (2).jpg',
-    '/images/community/community (3).jpg',
-    '/images/community/community (4).jpg',
-    '/images/community/community (5).jpg',
-  ];
-
-  const handleProfileChange = (pic: string) => {
-    setProfilePic(pic);
-    localStorage.setItem('profilePic', pic);
-    setShowProfilePicker(false);
-  };
 
   useEffect(() => {
     axios.get(`${API_URL}/products`)
@@ -62,7 +43,7 @@ export default function App() {
         <h1 className="text-2xl font-semibold tracking-wide">
           Hearth & Heal
         </h1>
-        <div className="flex gap-6 text-sm text-zinc-400 items-center">
+        <div className="flex gap-6 text-sm text-zinc-400">
           <span className="hover:text-white cursor-pointer">Shop</span>
           <span className="hover:text-white cursor-pointer">About</span>
           <Link 
@@ -71,36 +52,6 @@ export default function App() {
           >
             Cart ({cart.length})
           </Link>
-          
-          {/* Profile Picture */}
-          <div className="relative">
-            <img
-              src={profilePic}
-              alt="Profile"
-              onClick={() => setShowProfilePicker(!showProfilePicker)}
-              className="w-10 h-10 rounded-full object-cover cursor-pointer border-2 border-zinc-700 hover:border-green-500 transition"
-            />
-            
-            {/* Profile Picker Dropdown */}
-            {showProfilePicker && (
-              <div className="absolute right-0 top-12 bg-zinc-900 border border-zinc-700 rounded-xl p-3 shadow-xl z-50">
-                <p className="text-xs text-zinc-400 mb-2">Select Profile</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {profileOptions.map((pic, idx) => (
-                    <img
-                      key={idx}
-                      src={pic}
-                      alt={`Profile ${idx}`}
-                      onClick={() => handleProfileChange(pic)}
-                      className={`w-12 h-12 rounded-full object-cover cursor-pointer border-2 transition hover:scale-110 ${
-                        profilePic === pic ? 'border-green-500' : 'border-zinc-700'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 

@@ -8,24 +8,30 @@ import Admin from './Admin.tsx'
 import Checkout from './Checkout.tsx'
 import Success from './Success.tsx'
 import ProductDetail from './ProductDetail.tsx'
+import Profile from './Profile.tsx'
+import { AuthProvider } from './AuthContext.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <nav className="bg-zinc-900 p-4 flex gap-4">
-        <Link to="/" className="text-white hover:text-green-400">Shop</Link>
-        <Link to="/login" className="text-white hover:text-green-400">Login</Link>
-        <Link to="/admin" className="text-white hover:text-green-400">Admin</Link>
-        <Link to="/checkout" className="text-white hover:text-green-400 ml-auto">Checkout</Link>
-      </nav>
-      <Routes>
-        <Route path="/" element={<App />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/checkout" element={<Checkout />} />
-        <Route path="/success" element={<Success />} />
-        <Route path="/product/:id" element={<ProductDetail />} />
-      </Routes>
+      <AuthProvider>
+        <nav className="bg-zinc-900 p-4 flex gap-4">
+          <Link to="/" className="text-white hover:text-green-400">Shop</Link>
+          <Link to="/login" className="text-white hover:text-green-400">Login</Link>
+          <Link to="/profile" className="text-white hover:text-green-400">Profile</Link>
+          <Link to="/admin" className="text-white hover:text-green-400">Admin</Link>
+          <Link to="/checkout" className="text-white hover:text-green-400 ml-auto">Checkout</Link>
+        </nav>
+        <Routes>
+          <Route path="/" element={<App />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/success" element={<Success />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
 )

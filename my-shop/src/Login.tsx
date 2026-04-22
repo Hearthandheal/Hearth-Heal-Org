@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = "https://hearth-heal-api.onrender.com/api";
 
@@ -22,6 +23,7 @@ export default function Login() {
   const [isRegister, setIsRegister] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [currentImage, setCurrentImage] = useState(0);
+  const navigate = useNavigate();
 
   // Auto-rotate background images every 5 seconds - v2
   useEffect(() => {
@@ -38,8 +40,14 @@ export default function Login() {
       
       if (res.data.token) {
         localStorage.setItem("token", res.data.token);
+        
+        // Save user info if returned
+        if (res.data.user) {
+          localStorage.setItem("user", JSON.stringify(res.data.user));
+        }
+        
         alert(isRegister ? "Registered! Please login." : "Logged in!");
-        if (!isRegister) window.location.href = "/";
+        if (!isRegister) navigate("/");
       }
     } catch (err: any) {
       const errorMsg = err.response?.data?.error || err.response?.data || err.message;

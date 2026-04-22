@@ -53,6 +53,38 @@ router.get("/seed-admin", async (req, res) => {
   }
 });
 
+// Update Profile
+router.put("/profile", async (req, res) => {
+  try {
+    const { profilePicture } = req.body;
+    const token = req.headers.authorization;
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findByIdAndUpdate(
+      decoded.id,
+      { profilePicture },
+      { new: true }
+    );
+
+    res.json({ 
+      message: "Profile updated", 
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email, 
+        profilePicture: user.profilePicture 
+      } 
+    });
+  } catch (err) {
+    console.error("Profile update error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Login
 router.post("/login", async (req, res) => {
   try {
@@ -69,7 +101,15 @@ router.post("/login", async (req, res) => {
       process.env.JWT_SECRET
     );
 
-    res.json({ token });
+    res.json({ 
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        profilePicture: user.profilePicture
+      }
+    });
   } catch (err) {
     console.error("Login error:", err.message);
     res.status(500).json({ error: err.message });
