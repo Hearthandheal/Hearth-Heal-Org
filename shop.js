@@ -379,6 +379,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     const payment = await payRes.json();
 
+                    if (!payRes.ok) throw new Error(payment.error || "Failed to initiate payment");
+
                     stkStatusText.innerText = "✓ STK push sent! Check your phone to enter PIN.";
 
                     // Enable manual transaction code entry
