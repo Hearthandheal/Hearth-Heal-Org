@@ -332,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const stkBtn = document.getElementById('btn-stk-push');
         const stkStatus = document.getElementById('stk-status');
         const stkStatusText = document.getElementById('stk-status-text');
-        const BACKEND_URL = 'https://hearth-heal-api.onrender.com/api';
+        const BACKEND_URL = 'https://hearth-heal-org.onrender.com';
 
         if (stkBtn) {
             stkBtn.addEventListener('click', async () => {
@@ -353,22 +353,31 @@ document.addEventListener('DOMContentLoaded', () => {
                         formattedPhone = '254' + phone.substring(1);
                     }
 
-                    // Call M-Pesa STK Push endpoint
-                    const stkRes = await fetch(`${BACKEND_URL}/payments/stk`, {
+                    // 1. Create Invoice
+                    const invRes = await fetch(`${BACKEND_URL}/invoices`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            phone: formattedPhone,
+                            customerId: formattedPhone,
                             amount: total,
-                            orderId: 'checkout-' + Date.now()
+                            currency: 'KES',
+                            description: 'Hearth & Heal Merchandise'
                         })
                     });
+                    const invoice = await invRes.json();
 
-                    const stkData = await stkRes.json();
+                    if (!invRes.ok) throw new Error(invoice.error || "Failed to create invoice");
 
-                    if (!stkRes.ok) {
-                        throw new Error(stkData.error || "Failed to send STK push");
-                    }
+                    // 2. Trigger Payment (STK Push)
+                    const payRes = await fetch(`${BACKEND_URL}/payments`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            reference_number: invoice.reference_number,
+                            channel: 'mpesa'
+                        })
+                    });
+                    const payment = await payRes.json();
 
                     stkStatusText.innerText = "✓ STK push sent! Check your phone to enter PIN.";
 
