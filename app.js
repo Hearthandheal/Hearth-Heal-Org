@@ -45,7 +45,7 @@ app.use(helmet({
             "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
             "font-src": ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
             "img-src": ["'self'", "data:", "https:*"],
-            "connect-src": ["'self'", "https://hearth-heal-org.onrender.com", "https://hearth-heal-api.onrender.com", "http://localhost:3000"]
+            "connect-src": ["'self'", "https://hearth-heal-org.onrender.com", "https://hearth-heal-api.onrender.com", "http://localhost:3000", "https://unpkg.com"]
         },
     }
 }));
