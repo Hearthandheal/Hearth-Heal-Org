@@ -10,34 +10,41 @@ const TeamManager = {
     defaults: [
         {
             id: '1',
+            name: 'Karen Nemayian',
+            role: 'Brand Ambassador - Face of the Brand',
+            bio: 'Driving awareness and sales through product demonstrations, social media marketing, and customer engagement. Karen represents the heart and soul of Hearth & Heal.',
+            image: 'assets/karen_nemayian.jpg'
+        },
+        {
+            id: '2',
             name: 'Mr. John Haggee Ouma',
             role: 'Chief Executive Officer - Founder',
             bio: 'Provides overall leadership and vision. Oversees strategy, operations, and partnerships to ensure the mission of healing and growth is fulfilled with integrity and impact.',
             image: 'assets/john_haggee_ouma.jpg' // Fallback to asset path
         },
         {
-            id: '2',
+            id: '3',
             name: 'Jane Doe',
             role: 'Head of Spiritual Care',
             bio: 'Dedicated to providing spiritual guidance and fostering a connection with the divine for inner peace.',
             image: '' // No image placeholder
         },
         {
-            id: '3',
+            id: '4',
             name: 'Michael Smith',
             role: 'Program Coordinator',
             bio: 'Passionate about organizing impactful community events that bring people together for healing.',
             image: ''
         },
         {
-            id: '4',
+            id: '5',
             name: 'Emmanuel K. Letoiya',
             role: 'External Marketing',
             bio: 'Builds partnerships and expands our reach beyond the immediate community.',
             image: 'assets/emmanuel_k_letoiya.jpg'
         },
         {
-            id: '5',
+            id: '6',
             name: 'Angela Elijah',
             role: 'Events Manager',
             bio: 'Orchestrates our community gatherings and wellness workshops.',
