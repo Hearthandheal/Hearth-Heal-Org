@@ -34,9 +34,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (_email: string, _password: string) => {
     // This will be called from Login component
     // The actual API call happens in Login.tsx
+    console.log("Login called from AuthContext");
   };
 
   const logout = () => {

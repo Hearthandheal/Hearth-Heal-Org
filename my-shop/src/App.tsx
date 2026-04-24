@@ -65,6 +65,31 @@ export default function App() {
         </p>
       </div>
 
+      {/* BRAND AMBASSADOR */}
+      <div className="px-10 py-16 bg-zinc-900/20">
+        <h3 className="text-3xl font-semibold text-center mb-10 text-[#39ff14]">Brand Ambassador</h3>
+        <div className="flex flex-col md:flex-row items-center gap-10 max-w-4xl mx-auto">
+          <div className="flex-1">
+            <img
+              src="/images/karen_nemayian.jpg"
+              alt="Karen Nemayian"
+              className="w-full h-80 object-cover rounded-2xl border border-zinc-800"
+              onError={(e) => {
+                const target = e.currentTarget;
+                target.src = "https://via.placeholder.com/400x500/18181b/39ff14?text=Karen+Nemayian";
+              }}
+            />
+          </div>
+          <div className="flex-1">
+            <h4 className="text-3xl font-bold mb-2">Karen Nemayian</h4>
+            <p className="text-xl text-[#39ff14] mb-4">Face of the Brand</p>
+            <p className="text-zinc-400 leading-relaxed">
+              Driving awareness and sales through product demonstrations, social media marketing, and customer engagement. Karen represents the heart and soul of Hearth & Heal.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* PRODUCTS */}
       <div className="grid md:grid-cols-3 gap-10 px-10 pb-20">
         {products.map((p, i) => (
