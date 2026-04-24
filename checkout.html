@@ -3,136 +3,130 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Secure Checkout</title>
+<title>Premium Checkout</title>
+
+<script src="https://js.stripe.com/v3/"></script>
 
 <style>
 :root {
-    --bg: #f8f8f8;
+    --bg: #f6f6f7;
     --card: #ffffff;
     --text: #111;
     --muted: #777;
-    --border: #e5e5e5;
+    --border: #e6e6e6;
 }
 
-* {
-    box-sizing: border-box;
+body.dark {
+    --bg: #0e0e11;
+    --card: #16161a;
+    --text: #fff;
+    --muted: #aaa;
+    --border: #2a2a2f;
 }
 
 body {
     margin: 0;
-    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-family: -apple-system, sans-serif;
     background: var(--bg);
     color: var(--text);
+    transition: 0.3s;
 }
 
 .container {
     max-width: 1100px;
     margin: auto;
-    padding: 50px 20px;
+    padding: 40px 20px;
 }
 
-h1 {
-    font-weight: 500;
-    margin-bottom: 30px;
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.toggle {
+    cursor: pointer;
+    font-size: 14px;
 }
 
 .checkout {
     display: grid;
     grid-template-columns: 2fr 1fr;
-    gap: 40px;
+    gap: 30px;
 }
 
 .card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 14px;
+    border-radius: 16px;
     padding: 25px;
+    transition: 0.3s;
 }
 
-.section-title {
-    font-size: 16px;
-    margin-bottom: 15px;
-    font-weight: 600;
+.field {
+    position: relative;
+    margin-bottom: 18px;
 }
 
-input {
+.field input {
     width: 100%;
-    padding: 14px;
-    margin-bottom: 15px;
-    border-radius: 8px;
+    padding: 16px 12px;
+    border-radius: 10px;
     border: 1px solid var(--border);
-    font-size: 14px;
-    transition: 0.2s;
-}
-
-input:focus {
+    background: transparent;
+    color: var(--text);
     outline: none;
-    border-color: #111;
 }
 
-.row {
-    display: flex;
-    gap: 15px;
+.field label {
+    position: absolute;
+    left: 12px;
+    top: 14px;
+    color: var(--muted);
+    font-size: 13px;
+    transition: 0.2s;
+    pointer-events: none;
 }
 
-.row input {
-    flex: 1;
+.field input:focus + label,
+.field input:not(:placeholder-shown) + label {
+    top: -8px;
+    font-size: 11px;
+    background: var(--card);
+    padding: 0 5px;
 }
 
 .payment-option {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
     border: 1px solid var(--border);
-    padding: 12px 14px;
+    padding: 12px;
     border-radius: 10px;
     margin-bottom: 10px;
     cursor: pointer;
-    transition: 0.2s;
-}
-
-.payment-option:hover {
-    border-color: #111;
-}
-
-.payment-option input {
-    margin-right: 10px;
-}
-
-.summary-line {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 12px;
-    color: var(--muted);
-}
-
-.total {
-    font-size: 18px;
-    font-weight: 600;
-    color: #111;
 }
 
 button {
     width: 100%;
     padding: 15px;
-    background: #111;
-    color: #fff;
+    border-radius: 12px;
     border: none;
-    border-radius: 10px;
-    font-size: 15px;
+    background: black;
+    color: white;
     cursor: pointer;
-    transition: 0.25s;
+    transition: 0.3s;
 }
 
 button:hover {
-    background: #333;
+    opacity: 0.85;
 }
 
-.footer-note {
-    font-size: 12px;
-    color: var(--muted);
-    margin-top: 15px;
+.success {
+    display: none;
     text-align: center;
+    padding: 40px;
+}
+
+.success h2 {
+    font-size: 24px;
 }
 
 @media(max-width: 900px) {
@@ -147,90 +141,85 @@ button:hover {
 
 <div class="container">
 
-    <h1>Secure Checkout</h1>
+    <div class="top-bar">
+        <h2>Checkout</h2>
+        <div class="toggle" onclick="toggleMode()">?? Toggle Mode</div>
+    </div>
 
-    <div class="checkout">
+    <div id="checkoutUI" class="checkout">
 
         <!-- LEFT -->
         <div>
 
             <div class="card">
-                <div class="section-title">Contact Information</div>
-                <input type="text" placeholder="Full Name">
-                <input type="email" placeholder="Email Address">
+                <h3>Details</h3>
+
+                <div class="field">
+                    <input placeholder=" " id="name">
+                    <label>Full Name</label>
+                </div>
+
+                <div class="field">
+                    <input placeholder=" " id="email">
+                    <label>Email</label>
+                </div>
+
             </div>
 
             <div class="card">
-                <div class="section-title">Shipping Address</div>
-                <input type="text" placeholder="Address">
-                <div class="row">
-                    <input type="text" placeholder="City">
-                    <input type="text" placeholder="Postal Code">
+                <h3>Payment</h3>
+
+                <div class="payment-option">Card Payment</div>
+                <div id="card-element"></div>
+
+                <br>
+
+                <div class="payment-option">M-Pesa</div>
+                <div class="field">
+                    <input placeholder=" " id="phone">
+                    <label>Phone (2547XXXXXXXX)</label>
                 </div>
-                <input type="text" placeholder="Country">
-            </div>
 
-            <div class="card">
-                <div class="section-title">Payment Method</div>
-
-                <label class="payment-option">
-                    <div>
-                        <input type="radio" name="pay" checked>
-                        Card Payment
-                    </div>
-                </label>
-
-                <label class="payment-option">
-                    <div>
-                        <input type="radio" name="pay">
-                        M-Pesa
-                    </div>
-                </label>
-
-                <input type="text" placeholder="Card Number">
-                <div class="row">
-                    <input type="text" placeholder="Expiry">
-                    <input type="text" placeholder="CVV">
-                </div>
             </div>
 
         </div>
 
         <!-- RIGHT -->
         <div class="card">
-            <div class="section-title">Order Summary</div>
+            <h3>Summary</h3>
 
-            <div class="summary-line">
-                <span>Product</span>
-                <span>$120</span>
-            </div>
-
-            <div class="summary-line">
-                <span>Shipping</span>
-                <span>$10</span>
-            </div>
-
+            <p>Product: $120</p>
+            <p>Shipping: $10</p>
             <hr>
+            <h3>Total: $130</h3>
 
-            <div class="summary-line total">
-                <span>Total</span>
-                <span>$130</span>
-            </div>
-
-            <button onclick="checkout()">Complete Payment</button>
-
-            <div class="footer-note">
-                Secure encrypted payment
-            </div>
+            <button onclick="pay()">Complete Payment</button>
         </div>
 
+    </div>
+
+    <!-- SUCCESS -->
+    <div id="successUI" class="success">
+        <h2>?? Payment Successful</h2>
+        <p>Your order has been placed successfully.</p>
     </div>
 
 </div>
 
 <script>
-function checkout() {
-    alert("Processing payment...");
+const stripe = Stripe("YOUR_PUBLIC_KEY");
+const elements = stripe.elements();
+const card = elements.create("card");
+card.mount("#card-element");
+
+function toggleMode() {
+    document.body.classList.toggle("dark");
+}
+
+async function pay() {
+    // Simulated success (replace with backend call)
+    document.getElementById("checkoutUI").style.display = "none";
+    document.getElementById("successUI").style.display = "block";
 }
 </script>
 
