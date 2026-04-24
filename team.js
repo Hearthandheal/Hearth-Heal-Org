@@ -13,7 +13,7 @@ const TeamManager = {
             name: 'Karen Nemayian',
             role: 'Brand Ambassador - Face of the Brand',
             bio: 'Driving awareness and sales through product demonstrations, social media marketing, and customer engagement. Karen represents the heart and soul of Hearth & Heal.',
-            image: 'assets/karen_nemayian.jpg'
+            image: 'assets/Karen nemayian.jpg'
         },
         {
             id: '2',
