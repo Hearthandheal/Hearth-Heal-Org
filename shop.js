@@ -332,8 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const stkBtn = document.getElementById('btn-stk-push');
         const stkStatus = document.getElementById('stk-status');
         const stkStatusText = document.getElementById('stk-status-text');
-        const trxInput = document.getElementById('payment-code');
-        const BACKEND_URL = 'https://hearth-heal-org.onrender.com';
+        const BACKEND_URL = 'https://hearth-heal-api.onrender.com/api';
 
         if (stkBtn) {
             stkBtn.addEventListener('click', async () => {
@@ -345,62 +344,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 stkBtn.disabled = true;
                 stkStatus.style.display = 'block';
-                stkStatusText.innerText = "Initiating prompt...";
+                stkStatusText.innerText = "Initiating STK push...";
 
                 try {
-                    // 1. Create Invoice
-                    const invRes = await fetch(`${BACKEND_URL}/invoices`, {
+                    // Convert phone to 254 format if needed
+                    let formattedPhone = phone;
+                    if (phone.startsWith('07') || phone.startsWith('01')) {
+                        formattedPhone = '254' + phone.substring(1);
+                    }
+
+                    // Call M-Pesa STK Push endpoint
+                    const stkRes = await fetch(`${BACKEND_URL}/payments/stk`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            customerId: phone,
+                            phone: formattedPhone,
                             amount: total,
-                            currency: 'KES',
-                            description: 'Hearth & Heal Merchandise'
+                            orderId: 'checkout-' + Date.now()
                         })
                     });
-                    const invoice = await invRes.json();
 
-                    if (!invRes.ok) throw new Error(invoice.error || "Failed to create invoice");
+                    const stkData = await stkRes.json();
 
-                    // 2. Trigger Payment (STK Push)
-                    const payRes = await fetch(`${BACKEND_URL}/payments`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            reference_number: invoice.reference_number,
-                            channel: 'mpesa'
-                        })
-                    });
-                    const payment = await payRes.json();
+                    if (!stkRes.ok) {
+                        throw new Error(stkData.error || "Failed to send STK push");
+                    }
 
-                    stkStatusText.innerText = "Prompt sent! Awaiting payment...";
+                    stkStatusText.innerText = "✓ STK push sent! Check your phone to enter PIN.";
 
-                    // 3. Poll for Status
-                    const pollInterval = setInterval(async () => {
-                        try {
-                            const statusRes = await fetch(`${BACKEND_URL}/invoices/${invoice.reference_number}`);
-                            const statusData = await statusRes.json();
-
-                            if (statusData.status === 'PAID') {
-                                clearInterval(pollInterval);
-                                stkStatusText.innerHTML = "✅ <span style='color:green; font-weight:bold;'>Payment Verified Automatically!</span>";
-                                trxInput.value = "VERIFIED-" + invoice.reference_number;
-                                trxInput.style.backgroundColor = '#d4edda';
-                                stkBtn.innerText = "Paid & Verified";
-                            } else if (statusData.status === 'FAILED') {
-                                clearInterval(pollInterval);
-                                stkStatusText.innerHTML = "❌ <span style='color:red; font-weight:bold;'>Payment Failed or Cancelled.</span>";
-                                stkBtn.disabled = false;
-                                stkBtn.innerText = "Retry Payment";
-                            }
-                        } catch (e) {
-                            console.error("Polling error:", e);
-                        }
-                    }, 3000);
-
-                    // Timeout polling after 2 minutes
-                    setTimeout(() => clearInterval(pollInterval), 120000);
+                    // Enable manual transaction code entry
+                    setTimeout(() => {
+                        stkBtn.disabled = false;
+                        stkBtn.innerText = "Send Payment Prompt";
+                        stkStatusText.innerText = "Enter the M-Pesa transaction code below to complete your order.";
+                    }, 5000);
 
                 } catch (err) {
                     console.error(err);
