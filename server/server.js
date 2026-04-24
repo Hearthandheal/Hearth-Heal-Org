@@ -18,6 +18,7 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+// Redeploy for CORS fix
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/hearth_heal_shop')
