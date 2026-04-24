@@ -1,165 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hearth and Heal | Checkout</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&family=Inter:wght@400;600&display=swap"
-        rel="stylesheet">
-    <script src="https://unpkg.com/feather-icons"></script>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="styles-enhanced.css">
-    <link rel="stylesheet" href="styles-premium.css">
-    <meta name="p:domain_verify" content="9f14e2fe9ee4fc0edf7d136a1885755e" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure Checkout</title>
+
+<style>
+:root {
+    --bg: #f8f8f8;
+    --card: #ffffff;
+    --text: #111;
+    --muted: #777;
+    --border: #e5e5e5;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.container {
+    max-width: 1100px;
+    margin: auto;
+    padding: 50px 20px;
+}
+
+h1 {
+    font-weight: 500;
+    margin-bottom: 30px;
+}
+
+.checkout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 40px;
+}
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 25px;
+}
+
+.section-title {
+    font-size: 16px;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+input {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+input:focus {
+    outline: none;
+    border-color: #111;
+}
+
+.row {
+    display: flex;
+    gap: 15px;
+}
+
+.row input {
+    flex: 1;
+}
+
+.payment-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid var(--border);
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.payment-option:hover {
+    border-color: #111;
+}
+
+.payment-option input {
+    margin-right: 10px;
+}
+
+.summary-line {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    color: var(--muted);
+}
+
+.total {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111;
+}
+
+button {
+    width: 100%;
+    padding: 15px;
+    background: #111;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: 0.25s;
+}
+
+button:hover {
+    background: #333;
+}
+
+.footer-note {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 15px;
+    text-align: center;
+}
+
+@media(max-width: 900px) {
+    .checkout {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
 </head>
 
 <body>
 
-    <!-- Header -->
-    <header>
-        <div class="container nav-container">
-            <a href="index.html" class="logo">
-                <img src="assets/logo.png" alt="Hearth and Heal Logo">
-            </a>
-            <div class="mobile-menu-btn">
-                <i data-feather="menu"></i>
+<div class="container">
+
+    <h1>Secure Checkout</h1>
+
+    <div class="checkout">
+
+        <!-- LEFT -->
+        <div>
+
+            <div class="card">
+                <div class="section-title">Contact Information</div>
+                <input type="text" placeholder="Full Name">
+                <input type="email" placeholder="Email Address">
             </div>
-            <nav class="nav-links">
-                <a href="index.html" class="nav-link">Home</a>
-                <a href="shop.html" class="nav-link">Back to Shop</a>
-            </nav>
-        </div>
-    </header>
 
-    <!-- Checkout Section -->
-    <section class="checkout section-padding">
-        <div class="container">
-            <h1 style="text-align: center; margin-bottom: 3rem;">Secure Checkout</h1>
-
-            <div class="checkout-grid">
-                <!-- Left Column: Order Summary & Details -->
-                <div class="checkout-form-col">
-
-                    <!-- Cart Summary -->
-                    <div class="checkout-card mb-2">
-                        <h3>Order Summary</h3>
-                        <div id="checkout-cart-items" class="cart-items-list">
-                            <!-- Items inserted via JS -->
-                            <p style="color: #666; font-style: italic;">Your cart is empty.</p>
-                        </div>
-                        <div class="cart-total-row">
-                            <span>Total</span>
-                            <span id="checkout-total" class="total-price">$0.00</span>
-                        </div>
-                    </div>
-
-                    <!-- Delivery Details -->
-                    <div class="checkout-card">
-                        <h3>Delivery Information</h3>
-                        <div class="form-group">
-                            <label>Full Name</label>
-                            <input type="text" id="cust-name" placeholder="John Doe">
-                        </div>
-                        <div class="form-group">
-                            <label>Phone Number (WhatsApp)</label>
-                            <input type="tel" id="cust-phone" placeholder="+254...">
-                        </div>
-                        <div class="form-group">
-                            <label>Email Address</label>
-                            <input type="email" id="cust-email" placeholder="john@example.com">
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                            <div class="form-group">
-                                <label>City/Town</label>
-                                <input type="text" id="cust-city" placeholder="e.g., Nairobi">
-                            </div>
-                            <div class="form-group">
-                                <label>Estate/Street</label>
-                                <input type="text" id="cust-street" placeholder="e.g., Westlands">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Delivery Instructions (Optional)</label>
-                            <textarea id="cust-notes" rows="2"
-                                placeholder="Any specific details for the rider..."></textarea>
-                        </div>
-                    </div>
+            <div class="card">
+                <div class="section-title">Shipping Address</div>
+                <input type="text" placeholder="Address">
+                <div class="row">
+                    <input type="text" placeholder="City">
+                    <input type="text" placeholder="Postal Code">
                 </div>
+                <input type="text" placeholder="Country">
+            </div>
 
-                <!-- Right Column: Payment -->
-                <div class="payment-col">
-                    <div class="checkout-card payment-card">
-                        <h3>Payment Method</h3>
-                        <p class="mb-2" style="color: #666; font-size: 0.9rem;">
-                            Please complete payment using one of the methods below, then enter the Transaction Code to
-                            confirm your order.
-                        </p>
+            <div class="card">
+                <div class="section-title">Payment Method</div>
 
-                        <!-- Payment Tabs -->
-                        <div class="payment-tabs">
-                            <button class="payment-tab active" data-method="mpesa">
-                                <span style="font-weight: bold; color: #25D366;">M-Pesa</span>
-                            </button>
-                            <button class="payment-tab" data-method="bank">
-                                Bank Transfer
-                            </button>
-                        </div>
-
-                        <!-- M-Pesa Details -->
-                        <div id="mpesa-details" class="payment-details active">
-                            <div class="form-group">
-                                <label>M-Pesa Phone Number</label>
-                                <input type="tel" id="mpesa-phone" placeholder="07XX XXX XXX" value="">
-                                <small style="color: #666;">Enter the number to receive the payment prompt (STK
-                                    Push).</small>
-                                <button id="btn-stk-push" class="btn-primary mt-1"
-                                    style="width: 100%; height: 40px; font-size: 0.9rem;">
-                                    <i data-feather="smartphone"></i> Send Payment Prompt
-                                </button>
-                                <div id="stk-status" style="margin-top: 0.5rem; font-size: 0.85rem; display: none;">
-                                    <span class="status-spinner"></span> <span id="stk-status-text">Sending
-                                        prompt...</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Bank Details -->
-                        <div id="bank-details" class="payment-details">
-                            <div class="bank-box">
-                                <p><strong>kcb Bank</strong></p>
-                                <p>Acc: 114433429</p>
-                                <p>Branch: Nairobi</p>
-                            </div>
-                        </div>
-
-                        <hr class="divider">
-
-                        <!-- Verification -->
-                        <div class="form-group mt-2">
-                            <label>Transaction Code / Reference ID</label>
-                            <input type="text" id="payment-code" placeholder="e.g., QKH1234567"
-                                style="border-color: var(--color-primary); background: #f0fff4;">
-                        </div>
-
-                        <button id="btn-complete-order" class="btn-whatsapp-order mt-2">
-                            <i data-feather="lock"></i> Confirm & Send Order
-                        </button>
-                        <p style="text-align: center; font-size: 0.8rem; color: #888; margin-top: 1rem;">
-                            This will open WhatsApp with your verified order details.
-                        </p>
+                <label class="payment-option">
+                    <div>
+                        <input type="radio" name="pay" checked>
+                        Card Payment
                     </div>
+                </label>
+
+                <label class="payment-option">
+                    <div>
+                        <input type="radio" name="pay">
+                        M-Pesa
+                    </div>
+                </label>
+
+                <input type="text" placeholder="Card Number">
+                <div class="row">
+                    <input type="text" placeholder="Expiry">
+                    <input type="text" placeholder="CVV">
                 </div>
             </div>
-        </div>
-    </section>
 
-    <!-- Scripts -->
-    <script>feather.replace();</script>
-    <script src="auth.js"></script>
-    <script src="shop.js"></script>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="card">
+            <div class="section-title">Order Summary</div>
+
+            <div class="summary-line">
+                <span>Product</span>
+                <span>$120</span>
+            </div>
+
+            <div class="summary-line">
+                <span>Shipping</span>
+                <span>$10</span>
+            </div>
+
+            <hr>
+
+            <div class="summary-line total">
+                <span>Total</span>
+                <span>$130</span>
+            </div>
+
+            <button onclick="checkout()">Complete Payment</button>
+
+            <div class="footer-note">
+                Secure encrypted payment
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+function checkout() {
+    alert("Processing payment...");
+}
+</script>
+
 </body>
-
 </html>
