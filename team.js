@@ -4,7 +4,7 @@
  */
 
 const TeamManager = {
-    STORAGE_KEY: 'hearth_team_data',
+    STORAGE_KEY: 'hearth_team_data_v2',
 
     // Default Seed Data
     defaults: [
@@ -13,7 +13,7 @@ const TeamManager = {
             name: 'Karen Nemayian',
             role: 'Brand Ambassador - Face of the Brand',
             bio: 'Driving awareness and sales through product demonstrations, social media marketing, and customer engagement. Karen represents the heart and soul of Hearth & Heal.',
-            image: 'assets/Karen nemayian.jpg'
+            image: 'assets/karen_nemayian.jpg'
         },
         {
             id: '2',
