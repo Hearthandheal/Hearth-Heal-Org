@@ -53,6 +53,7 @@ app.use(cors({ origin: true }));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static(path.join(__dirname))); // Serve static frontend files
 app.disable("x-powered-by");
+// Redeploy for CSP fix
 
 const limiter = rateLimit({
     windowMs: 10 * 60 * 1000,
