@@ -15,29 +15,46 @@
     <link rel="stylesheet" href="styles-premium.css">
     <meta name="p:domain_verify" content="9f14e2fe9ee4fc0edf7d136a1885755e" />
 
-    <style>
+        <style>
         /* Dark Theme Overrides */
-        body {`n        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;`n        font-weight: 400;`n        letter-spacing: -0.01em;
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-weight: 400;
+            letter-spacing: -0.01em;
             background-color: #0a0a0a !important;
             color: #ffffff !important;
         }
 
-        .checkout-card {`n            border-radius: 16px;`n            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);`n            transition: all 0.3s ease;
+        .checkout-card {
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
             background-color: #111111 !important;
             border: 1px solid #222222 !important;
             color: #ffffff !important;
         }
 
-        .checkout-card h3 {`n            font-family: "Outfit", sans-serif;`n            font-weight: 700;`n            letter-spacing: -0.02em;
+        .checkout-card h3 {
+            font-family: "Outfit", sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.02em;
             color: #ffffff !important;
         }
 
-        .checkout-card label {`n            font-family: "Inter", sans-serif;`n            font-weight: 500;`n            font-size: 0.85rem;`n            letter-spacing: 0.01em;
+        .checkout-card label {
+            font-family: "Inter", sans-serif;
+            font-weight: 500;
+            font-size: 0.85rem;
+            letter-spacing: 0.01em;
             color: #cccccc !important;
         }
 
-        .checkout-card input,`n        .checkout-card textarea {`n            font-family: "Inter", sans-serif;`n            font-size: 0.95rem;`n            font-weight: 400;`n            letter-spacing: -0.005em;
+        .checkout-card input,
         .checkout-card textarea {
+            font-family: "Inter", sans-serif;
+            font-size: 0.95rem;
+            font-weight: 400;
+            letter-spacing: -0.005em;
             background-color: #1a1a1a !important;
             border: 1px solid #333333 !important;
             color: #ffffff !important;
@@ -54,17 +71,27 @@
             color: #666666 !important;
         }
 
-        .payment-tabs {`n            border-radius: 12px;`n            overflow: hidden;
+        .payment-tabs {
+            border-radius: 12px;
+            overflow: hidden;
             background-color: #1a1a1a !important;
             border: 1px solid #333333 !important;
         }
 
-        .payment-tab {`n            border-radius: 8px;`n            transition: all 0.3s ease;`n            padding: 12px 20px;`n            font-family: "Inter", sans-serif;`n            font-weight: 500;`n            font-size: 0.9rem;`n            letter-spacing: 0.01em;
+        .payment-tab {
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            padding: 12px 20px;
+            font-family: "Inter", sans-serif;
+            font-weight: 500;
+            font-size: 0.9rem;
+            letter-spacing: 0.01em;
             background-color: #1a1a1a !important;
             color: #cccccc !important;
         }
 
-        .payment-tab.active {`n            box-shadow: 0 4px 12px rgba(57, 255, 20, 0.3);
+        .payment-tab.active {
+            box-shadow: 0 4px 12px rgba(57, 255, 20, 0.3);
             background-color: #222222 !important;
             color: #39ff14 !important;
             border-bottom: 2px solid #39ff14 !important;
@@ -74,29 +101,58 @@
             background-color: #222222 !important;
         }
 
-        .bank-box {`n            border-radius: 12px;`n            padding: 20px;`n            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);`n            font-family: "Inter", sans-serif;`n            font-weight: 400;`n            font-size: 0.9rem;
+        .bank-box {
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            font-family: "Inter", sans-serif;
+            font-weight: 400;
+            font-size: 0.9rem;
             background-color: #1a1a1a !important;
             border: 1px solid #333333 !important;
             color: #ffffff !important;
         }
 
-        .btn-primary,`n        .btn-whatsapp-order {`n            border-radius: 12px;`n            box-shadow: 0 4px 12px rgba(57, 255, 20, 0.3);`n            transition: all 0.3s ease;`n        .btn-whatsapp-order {`n            font-family: "Outfit", sans-serif;`n            font-weight: 600;`n            font-size: 0.95rem;`n            letter-spacing: 0.02em;`n            text-transform: uppercase;
+        .btn-primary,
         .btn-whatsapp-order {
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(57, 255, 20, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .btn-whatsapp-order {
+            font-family: "Outfit", sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
             background-color: #39ff14 !important;
             color: #0a0a0a !important;
             border: none !important;
         }
 
-        .btn-primary:hover,`n        .btn-whatsapp-order:hover {`n            box-shadow: 0 4px 16px rgba(57, 255, 20, 0.4);`n            transform: translateY(-2px);
+        .btn-primary:hover,
+        .btn-whatsapp-order:hover {
+            box-shadow: 0 4px 16px rgba(57, 255, 20, 0.4);
+            transform: translateY(-2px);
+        }
+
         .btn-whatsapp-order:hover {
             background-color: #2ed411 !important;
         }
 
-        .cart-total-row {`n            font-family: "Inter", sans-serif;`n            font-weight: 500;`n            font-size: 0.95rem;
+        .cart-total-row {
+            font-family: "Inter", sans-serif;
+            font-weight: 500;
+            font-size: 0.95rem;
             color: #ffffff !important;
         }
 
-        .total-price {`n            font-family: "Outfit", sans-serif;`n            font-weight: 700;`n            font-size: 1.1rem;`n            letter-spacing: -0.01em;
+        .total-price {
+            font-family: "Outfit", sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: -0.01em;
             color: #39ff14 !important;
         }
 
@@ -107,8 +163,81 @@
         .divider {
             border-color: #333333 !important;
         }
-            #btn-stk-push {`n            background: linear-gradient(135deg, #39ff14 0%, #2ed411 100%) !important;`n            color: #0a0a0a !important;`n            border: none !important;`n            border-radius: 12px !important;`n            padding: 16px 32px !important;`n            font-family: "Outfit", sans-serif !important;`n            font-weight: 600 !important;`n            font-size: 0.95rem !important;`n            letter-spacing: 0.01em !important;`n            text-transform: uppercase !important;`n            box-shadow: 0 4px 16px rgba(57, 255, 20, 0.3) !important;`n            transition: all 0.3s ease !important;`n            cursor: pointer !important;`n            white-space: nowrap !important;`n            line-height: 1.2 !important;`n            text-align: center !important;`n            display: flex !important;`n            align-items: center !important;`n            justify-content: center !important;`n        }`n`n        #btn-stk-push:hover {`n            background: linear-gradient(135deg, #2ed411 0%, #25b80e 100%) !important;`n            box-shadow: 0 6px 20px rgba(57, 255, 20, 0.5) !important;`n            transform: translateY(-2px) !important;`n        }`n`n        #btn-stk-push:active {`n            transform: translateY(0) !important;`n            box-shadow: 0 2px 8px rgba(57, 255, 20, 0.3) !important;`n        }`n`n        #btn-complete-order {`n            background: linear-gradient(135deg, #39ff14 0%, #2ed411 100%) !important;`n            color: #0a0a0a !important;`n            border: none !important;`n            border-radius: 12px !important;`n            padding: 18px 32px !important;`n            font-family: "Outfit", sans-serif !important;`n            font-weight: 700 !important;`n            font-size: 0.95rem !important;`n            letter-spacing: 0.01em !important;`n            text-transform: uppercase !important;`n            box-shadow: 0 6px 20px rgba(57, 255, 20, 0.4) !important;`n            transition: all 0.3s ease !important;`n            cursor: pointer !important;`n            white-space: nowrap !important;`n            line-height: 1.2 !important;`n            text-align: center !important;`n            display: flex !important;`n            align-items: center !important;`n            justify-content: center !important;`n        }`n`n        #btn-complete-order:hover {`n            background: linear-gradient(135deg, #2ed411 0%, #25b80e 100%) !important;`n            box-shadow: 0 8px 24px rgba(57, 255, 20, 0.6) !important;`n            transform: translateY(-3px) !important;`n        }`n`n        #btn-complete-order:active {`n            transform: translateY(0) !important;`n            box-shadow: 0 4px 12px rgba(57, 255, 20, 0.4) !important;`n        }`n            transform: translateY(0) !important;`n            box-shadow: 0 2px 8px rgba(57, 255, 20, 0.3) !important;`n        }`n            #stk-status {
-            background-color: #0d5c3b !important; border: 2px solid #39ff14 !important; border-radius: 8px !important; padding: 16px 20px !important; margin-top: 16px !important; color: #ffffff !important; box-shadow: 0 4px 16px rgba(57, 255, 20, 0.3) !important;
+
+        #btn-stk-push {
+            background: linear-gradient(135deg, #39ff14 0%, #2ed411 100%) !important;
+            color: #0a0a0a !important;
+            border: none !important;
+            border-radius: 12px !important;
+            padding: 16px 32px !important;
+            font-family: "Outfit", sans-serif !important;
+            font-weight: 600 !important;
+            font-size: 0.95rem !important;
+            letter-spacing: 0.01em !important;
+            text-transform: uppercase !important;
+            box-shadow: 0 4px 16px rgba(57, 255, 20, 0.3) !important;
+            transition: all 0.3s ease !important;
+            cursor: pointer !important;
+            white-space: nowrap !important;
+            line-height: 1.2 !important;
+            text-align: center !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        #btn-stk-push:hover {
+            background: linear-gradient(135deg, #2ed411 0%, #25b80e 100%) !important;
+            box-shadow: 0 6px 20px rgba(57, 255, 20, 0.5) !important;
+            transform: translateY(-2px) !important;
+        }
+
+        #btn-stk-push:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 2px 8px rgba(57, 255, 20, 0.3) !important;
+        }
+
+        #btn-complete-order {
+            background: linear-gradient(135deg, #39ff14 0%, #2ed411 100%) !important;
+            color: #0a0a0a !important;
+            border: none !important;
+            border-radius: 12px !important;
+            padding: 18px 32px !important;
+            font-family: "Outfit", sans-serif !important;
+            font-weight: 700 !important;
+            font-size: 0.95rem !important;
+            letter-spacing: 0.01em !important;
+            text-transform: uppercase !important;
+            box-shadow: 0 6px 20px rgba(57, 255, 20, 0.4) !important;
+            transition: all 0.3s ease !important;
+            cursor: pointer !important;
+            white-space: nowrap !important;
+            line-height: 1.2 !important;
+            text-align: center !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        #btn-complete-order:hover {
+            background: linear-gradient(135deg, #2ed411 0%, #25b80e 100%) !important;
+            box-shadow: 0 8px 24px rgba(57, 255, 20, 0.6) !important;
+            transform: translateY(-3px) !important;
+        }
+
+        #btn-complete-order:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 4px 12px rgba(57, 255, 20, 0.4) !important;
+        }
+
+        #stk-status {
+            background-color: #0d5c3b !important;
+            border: 2px solid #39ff14 !important;
+            border-radius: 8px !important;
+            padding: 16px 20px !important;
+            margin-top: 16px !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 16px rgba(57, 255, 20, 0.3) !important;
         }
 
         #stk-status-text {
@@ -221,7 +350,7 @@
                                     style="width: 100%; height: 40px; font-size: 0.9rem;">
                                     <i data-feather="smartphone"></i> Send Payment Prompt
                                 </button>
-                                <div id="stk-status" style="margin-top: 0.5rem; font-size: 0.85rem; display: none;">
+                                <div id="stk-status" style="margin-top: 0.5rem; font-size: 0.85rem; display: none; background-color: #0d5c3b; padding: 12px; border-radius: 8px; border: 2px solid #39ff14; color: #ffffff;">
                                     <span class="status-spinner"></span> <span id="stk-status-text">Sending
                                         prompt...</span>
                                 </div>
@@ -265,6 +394,7 @@
 </body>
 
 </html>
+
 
 
 
