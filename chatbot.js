@@ -362,9 +362,9 @@ const OLAF_KNOWLEDGE = [
     reply: `<b>Ms. Sarah Gacoki</b> handles <b>merchandise</b> — shop inventory and getting quality goods to supporters. 🛒 ${olafLink("shop.html", "Shop")}`
   },
   {
-    phrases: ["emmanuel letoiya", "esther atieno", "marketing"],
-    words: ["marketing", "partnerships", "emmanuel", "esther"],
-    reply: `Our reach grows through <b>External Marketing</b> (Mr. Emmanuel K. Letoiya — partnerships) and <b>Internal Marketing</b> (Ms. Esther Atieno). 📣 ${olafLink("mission.html", "Team")}`
+    phrases: ["emmanuel letoiya", "marketing"],
+    words: ["marketing", "partnerships", "emmanuel"],
+    reply: `Our reach grows through <b>External Marketing</b> led by Mr. Emmanuel K. Letoiya (partnerships). 📣 ${olafLink("mission.html", "Team")}`
   },
   {
     phrases: ["who is olaf", "your job", "mascot", "wellness companion"],
